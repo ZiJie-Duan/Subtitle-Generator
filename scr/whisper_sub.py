@@ -12,3 +12,6 @@ class whisper_driver:
     
     def transcribe(self,file_path):
         self.result = self.model.transcribe(file_path,verbose=True)
+    
+    def result_print(self):
+        print(self.result)

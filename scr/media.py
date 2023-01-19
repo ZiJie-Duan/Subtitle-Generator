@@ -9,14 +9,18 @@ print_mode_init = init_env()
 
 @MessageBox(mp)
 class MEDIA:
-    def __init__(self, file, cmd):
-        self._file = file
+    def __init__(self, infile, cmd ,outfile=None):
+        self._infile = infile
         self._cmd = cmd
         self._duration = 0
+        if outfile == None:
+            self._outfile = infile
+        else:
+            self._outfile = outfile
     
     def set_media(self, file_path):
-        if self._file.set_path(file_path):
-            self._duration = self.get_length(self._file())
+        if self._infile.set_path(file_path):
+            self._duration = self.get_length(self._infile())
             print("set media file success")
         else:
             print("set media file failed")
@@ -29,13 +33,18 @@ class MEDIA:
             stderr=subprocess.STDOUT)
         return float(result.stdout)
 
-    def splite_audio(self,start=0,duration=0,new_fname="new.wav"):
+    def splite_audio(self,start=0,duration=0,new_fname=None):
         if duration == 0:
             duration = self._duration
-            
-        self._cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
-            .format(self._file(),start,\
-            duration,self._file.build_new_file(new_fname)))
+
+        if new_fname == None:
+            self._cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
+                .format(self._infile(),start,\
+                duration,self._outfile()))
+        else:
+            self._cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
+                .format(self._infile(),start,\
+                duration,self._outfile.build_path(new_fname)))
     
     # def change_segment(self, start=0, duration=30):
     #     if self._timess['start'] == 0:
