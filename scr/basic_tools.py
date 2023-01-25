@@ -33,7 +33,7 @@ class PATH_CONVERT:
 
         else:
             pass # MAC or other system
-
+    
     def build_new_file(self, file_name):
         if self.system == "Windows":
             return self.file_working_path + "\\" + file_name
@@ -75,12 +75,16 @@ class SYSTEM_CMD:
         else:
             pass # MAC or other system
 
+
 # test code
 
+# @MEMO(memory)
+# def wr():
+#     pass
+
 # test = PATH_CONVERT()
-# test.set_path(input("Enter file path: "))
 # print(test.file_path)
 # print(test.file_working_path)
 # print(test.file_name)
-# print(test.build_new_file(input("Enter new file name: ")))
+# wr()
 # input()

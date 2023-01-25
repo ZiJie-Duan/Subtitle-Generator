@@ -1,6 +1,13 @@
 import json
 from types import FunctionType
 
+"""
+from memo import *
+memory = MEMORY()
+
+@MEMO(memory)
+"""
+
 class MEMORY:
 
     def __init__(self) -> None:
@@ -29,9 +36,6 @@ class MEMORY:
     def memo_del(self,key):
         del self.memo[key]
         self.memo_write()
-
-
-memory = MEMORY()
 
 
 class MEMO:
@@ -69,6 +73,9 @@ class MEMO:
     def initer(self,mfunction):
         def wrapper(*args, **kwds):
             mfunction(*args, **kwds)
+            if args[0].__class__.__name__ in self.memory.memo:
+                for key, value in self.memory.memo[args[0].__class__.__name__].items():
+                    args[0].__dict__[key] = value
             self.memory.memo[args[0].__class__.__name__] = args[0].__dict__
         return wrapper
 
@@ -76,24 +83,24 @@ class MEMO:
         self.memory.memo_write()
 
 
-@MEMO(memory)
-class say_hello:
+# memory = MEMORY()
 
-    def __init__(self) -> None:
-        self.name = None
-        self.name2 = None
+# @MEMO(memory)
+# class say_hello:
 
-    @MEMO(memory)
-    def say_hello(self):
-        print("hello {}".format(self.name))
+#     def __init__(self) -> None:
+#         self.name = None
+#         self.name2 = None
+
+#     @MEMO(memory)
+#     def say_hello(self):
+#         print("hello {}".format(self.name))
     
-    def say2_hello(self):
-        print("hello {} and {}".format(self.name,self.name2))
+#     def say2_hello(self):
+#         print("hello {} and {}".format(self.name,self.name2))
 
 
-sh = say_hello()
-sh.name = "peter"
-sh.name2 = "jack"
-sh.say_hello()
-sh.say2_hello()
-print()
+# sh = say_hello()
+# sh.say_hello()
+# sh.say2_hello()
+# print()

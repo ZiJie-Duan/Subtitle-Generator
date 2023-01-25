@@ -9,9 +9,9 @@ class whisper_driver:
 
     def model_load(self,model = "tiny.en"):
         self.model = whisper.load_model(model)
-    
+     
     def transcribe(self,file_path):
         self.result = self.model.transcribe(file_path,verbose=True)
     
-    def result_print(self):
-        print(self.result)
+    def get_result(self):
+        return self.result
