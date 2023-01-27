@@ -3,10 +3,20 @@ from types import FunctionType
 
 """
 from memo import *
-memory = MEMORY()
 
-@MEMO(memory)
+@MEMO()
 """
+
+memory_var = None
+
+def memory_global():
+    global memory_var
+    if memory_var:
+        pass
+    else:
+        memory_var = MEMORY()
+    return memory_var
+
 
 class MEMORY:
 
@@ -48,9 +58,9 @@ class MEMO:
     in classes, it will record all the attributes when the init-function finished.
     """
 
-    def __init__(self, memory, memory_mode = "normal"):
+    def __init__(self, memory_mode = "normal"):
         self.memory_mode = memory_mode
-        self.memory = memory
+        self.memory = memory_global()
     
     def __call__(self, mclass):
         
@@ -83,16 +93,15 @@ class MEMO:
         self.memory.memo_write()
 
 
-# memory = MEMORY()
 
-# @MEMO(memory)
+# @MEMO()
 # class say_hello:
 
 #     def __init__(self) -> None:
 #         self.name = None
 #         self.name2 = None
 
-#     @MEMO(memory)
+#     @MEMO()
 #     def say_hello(self):
 #         print("hello {}".format(self.name))
     
@@ -101,6 +110,8 @@ class MEMO:
 
 
 # sh = say_hello()
+# sh.name = "peter"
+# sh.name = "jason"
 # sh.say_hello()
 # sh.say2_hello()
 # print()

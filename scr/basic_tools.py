@@ -1,8 +1,9 @@
 import platform
 import os
 
-class PATH_CONVERT:
+from memo import *
 
+class FILE_PATH:
     def __init__(self):
         self.system = platform.system()
         self.file_path = None
@@ -34,9 +35,22 @@ class PATH_CONVERT:
         else:
             pass # MAC or other system
     
-    def build_new_file(self, file_name):
+
+@MEMO()
+class FILE_MANAGER:
+
+    def __init__(self):
+        self.files = {}
+
+    def __call__(self,sign):
+        return self.files[sign].file_path
+    
+    def add_file(self,sign,file):
+        self.files[sign] = file
+    
+    def build_new_file(self, sign, file_name):
         if self.system == "Windows":
-            return self.file_working_path + "\\" + file_name
+            return self.files[sign].file_working_path + "\\" + file_name
 
         else:
             pass # MAC or other system
