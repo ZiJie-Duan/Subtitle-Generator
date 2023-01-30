@@ -1,9 +1,7 @@
 import whisper
 
-from memo import *
 
-@MEMO()
-class whisper_driver:
+class WHISPER_DRIVER:
 
     def __init__(self) -> None:
         self.model = None

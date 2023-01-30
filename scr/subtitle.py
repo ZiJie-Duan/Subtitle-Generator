@@ -1,7 +1,10 @@
+from MessageBox import*
 
-from memo import *
+mp, print, orprint, printe, printse,\
+printnn, printmid, print_mode_mute,\
+print_mode_init = init_env()
 
-@MEMO()
+@MessageBox(mp)
 class SUBTITLE_WRITER:
 
     def __init__(self,files) -> None:
@@ -10,8 +13,8 @@ class SUBTITLE_WRITER:
         self.file_subtitle = None
     
     def open(self):
-        self.file_subtitle = open(self.files("OUT_SUBTITLE"),"a",encoding='utf-8')
-    
+        self.file_subtitle = open(self.files(),"a",encoding='utf-8')
+
     def close(self):
         self.file_subtitle.close()
 
@@ -33,7 +36,7 @@ class SUBTITLE_WRITER:
         data += "\n"
         self.file_subtitle.write(data)
 
-    def write_text(self,start,end,text):
+    def write_subtitle(self,start,end,text,text2=None):
         data = str(self.sub_index) + "\n"
         data += "{}:{}:{},{} --> {}:{}:{},{}\n"\
             .format(\
@@ -46,9 +49,19 @@ class SUBTITLE_WRITER:
                 self.fix_zero(end[2]),\
                 self.fix_zero(end[3],msec=True),\
                 text)
+
         for sentence in text:
-            data += sentence+"\n"
+            data += sentence
+
+        if text2 != None:
+            data += "\n"
+            for sentence in text2:
+                data += sentence
+                
+        data += "\n"
         self.write_line(data)
+        print(data)
+        self.sub_index += 1
 
 
 # from basic_tools import *

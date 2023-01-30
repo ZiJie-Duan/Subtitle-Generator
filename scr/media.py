@@ -6,26 +6,26 @@ mp, print, orprint, printe, printse,\
 printnn, printmid, print_mode_mute,\
 print_mode_init = init_env()
 
-from memo import *
 
 @MessageBox(mp)
-@MEMO()
 class MEDIA:
     def __init__(self, infile, cmd ,outfile=None):
-        self._infile = infile
-        self._cmd = cmd
-        self._duration = 0
+        self.infile = infile
+        self.cmd = cmd
+        self.duration = self.get_length(self.infile())
         if outfile == None:
-            self._outfile = infile
+            outfile = FILE_PATH()
+            outfile.set_path(self.infile.build_new_file("tmp.mp3"))
+            self.outfile = outfile
         else:
-            self._outfile = outfile
+            self.outfile = outfile
     
-    def set_media(self, file_path):
-        if self._infile.set_path(file_path):
-            self._duration = self.get_length(self._infile())
-            print("set media file success")
-        else:
-            print("set media file failed")
+    # def set_media(self, file_path):
+    #     if self.infile.set_path(file_path):
+    #         self.duration = self.get_length(self.infile())
+    #         print("set media file success")
+    #     else:
+    #         print("set media file failed")
 
     def get_length(self,filename):
         result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
@@ -36,17 +36,23 @@ class MEDIA:
         return float(result.stdout)
 
     def splite_audio(self,start=0,duration=0,new_fname=None):
+        print("splite audio")
+        print("start: {}, duration: {}".format(start,duration))
+
         if duration == 0:
-            duration = self._duration
+            duration = self.duration
+        
+        if duration > self.duration:
+            duration = self.duration
 
         if new_fname == None:
-            self._cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
-                .format(self._infile(),start,\
-                duration,self._outfile()))
+            self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
+                .format(self.infile(),start,\
+                duration,self.outfile()))
         else:
-            self._cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
-                .format(self._infile(),start,\
-                duration,self._outfile.build_path(new_fname)))
+            self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
+                .format(self.infile(),start,\
+                duration,self.outfile.build_path(new_fname)))
     
     # def change_segment(self, start=0, duration=30):
     #     if self._timess['start'] == 0:
@@ -57,7 +63,7 @@ class MEDIA:
 
 # if __name__ == "__main__":
 #     file = PATH_CONVERT()
-#     cmd = SYSTEM_CMD()
+#     cmd = SYSTEMcmd()
 #     media = MEDIA(file, cmd)
 #     media.set_media(r"C:\Users\lucyc\Desktop\aaa.mp4")
 #     # for x in range(6):

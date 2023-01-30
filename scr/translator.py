@@ -9,10 +9,8 @@ mp, print, orprint, printe, printse,\
 printnn, printmid, print_mode_mute,\
 print_mode_init = init_env()
 
-from memo import *
 
 @MessageBox(mp)
-@MEMO()
 class TRANSLATOR:
     def __init__(self):
         self.in_lang = "en"

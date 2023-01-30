@@ -93,8 +93,19 @@ class MEMO:
         self.memory.memo_write()
 
 
+# class MM:
 
-# @MEMO()
+#     def __init__(self):
+#         self.data = {}
+
+#     def __call__(self, key, value = None):
+#         if value != None:
+#             self.data[key] = value
+#             return 0
+#         return self.data[key]
+
+
+# # @MEMO()
 # class say_hello:
 
 #     def __init__(self) -> None:

@@ -1,13 +1,14 @@
 import platform
 import os
 
-from memo import *
 
 class FILE_PATH:
     def __init__(self):
         self.system = platform.system()
         self.file_path = None
         self.file_name = None
+        self.file_name_no_ext = None
+        self.file_ext = None
         self.file_working_path = None
     
     def __call__(self):
@@ -26,32 +27,31 @@ class FILE_PATH:
                 self.file_path = file_path
                 tmp = file_path.split("\\")
                 self.file_name = tmp[-1]
+                self.file_name_no_ext = self.file_name.split(".")[0]
+                self.file_ext = self.file_name.split(".")[1]
                 tmp = tmp[:-1]
                 self.file_working_path = "\\".join(tmp)
                 return True
             else:
                 return False
-
         else:
             pass # MAC or other system
-    
-
-@MEMO()
-class FILE_MANAGER:
-
-    def __init__(self):
-        self.files = {}
-
-    def __call__(self,sign):
-        return self.files[sign].file_path
-    
-    def add_file(self,sign,file):
-        self.files[sign] = file
-    
-    def build_new_file(self, sign, file_name):
+        
+    def build_new_file(self, file_name=None, file_name_no_ext=None, ext=None):
         if self.system == "Windows":
-            return self.files[sign].file_working_path + "\\" + file_name
-
+            if file_name != None:
+                return self.file_working_path + "\\" + file_name
+            else:
+                if file_name_no_ext == None:
+                    if ext == None:
+                        return self.file_working_path + "\\" + self.file_name_no_ext + "_new." + self.file_ext
+                    else:
+                        return self.file_working_path + "\\" + self.file_name_no_ext + "." + ext
+                else:
+                    if ext == None:
+                        return self.file_working_path + "\\" + file_name_no_ext + "." + self.file_ext
+                    else:
+                        return self.file_working_path + "\\" + file_name_no_ext + "." + ext
         else:
             pass # MAC or other system
 
@@ -88,6 +88,30 @@ class SYSTEM_CMD:
         
         else:
             pass # MAC or other system
+
+
+# class FILE_MANAGER:
+
+#     def __init__(self):
+#         self.files = {}
+
+#     def __call__(self,sign):
+#         return self.files[sign].file_path
+    
+#     def add_file(self,sign,file):
+#         self.files[sign] = file
+    
+#     def add_file_via_path(self,sign,path):
+#         file = FILE_PATH()
+#         file.set_path(path)
+#         self.files[sign] = file
+    
+#     def build_new_file(self, sign, file_name):
+#         if self.system == "Windows":
+#             return self.files[sign].file_working_path + "\\" + file_name
+
+#         else:
+#             pass # MAC or other system
 
 
 # test code
