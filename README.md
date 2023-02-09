@@ -1,4 +1,4 @@
-# Subtitle-Generator
+# Subtitle-Generator ![](https://img.shields.io/badge/license-MIT-blue)
 this is a bilingual Subtitle Generator for video
 
 
