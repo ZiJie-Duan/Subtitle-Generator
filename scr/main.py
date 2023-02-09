@@ -29,15 +29,17 @@ class SUBTITLE_GENERATOR:
         subtitle_file.set_path(subtitle_path)
         self.subtitle = SUBTITLE_WRITER(files=subtitle_file)
     
-    def generate_subtitle(self, start=0, duration=300):
-        self.media.splite_audio(start, duration)
-        self.whisper.transcribe(self.media.outfile())
+    def generate_subtitle(self, duration=999999999):
+
+        audio_file = self.media.get_a_part_of_audio(duration)
+        self.whisper.transcribe(audio_file)
         self.whisper.init_reader()
 
         while True:
             text_tuple = self.whisper.get_sentence()
             if text_tuple != (None,None,None):
                 new = self.translator.translate_sentence(text_tuple[2])
+                #new = "TEST MODE"
                 self.subtitle.open()
                 self.subtitle.write_subtitle(text_tuple[0],text_tuple[1],text_tuple[2],new)
                 self.subtitle.close()
@@ -50,8 +52,8 @@ def main():
     sub.init_generator(sys.argv[1])
 
     sub.translator.apiurl = 'http://api.fanyi.baidu.com/api/trans/vip/translate'
-    sub.translator.appid = "" #check baidu account
-    sub.translator.secretyKey = ''
+    sub.translator.appid = "20221126001472283" #check baidu account
+    sub.translator.secretyKey = 'n98TwxjzHl0zYcIuGLgw'
     sub.generate_subtitle()
 
 
