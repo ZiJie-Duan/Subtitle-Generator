@@ -1,4 +1,6 @@
-#!C:\Users\lucyc\Desktop\sub_venv\Scripts\python.exe
+
+# -*- coding: utf-8 -*-
+# you can add your python.exe path in the first line
 from media import*
 from subtitle import*
 from translator import*
@@ -48,6 +50,7 @@ class SUBTITLE_GENERATOR:
 
 
 def main():
+    print("subtitle generator beta_0.1")
     sub = SUBTITLE_GENERATOR()
     sub.init_generator(sys.argv[1])
 
@@ -56,6 +59,8 @@ def main():
     sub.translator.secretyKey = 'n98TwxjzHl0zYcIuGLgw'
     sub.generate_subtitle()
 
+    print("subtitle generated")
+    input("press any key to exit")
 
 
 if __name__ =='__main__':
