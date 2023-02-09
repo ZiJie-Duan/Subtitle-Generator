@@ -55,8 +55,8 @@ def main():
     sub.init_generator(sys.argv[1])
 
     sub.translator.apiurl = 'http://api.fanyi.baidu.com/api/trans/vip/translate'
-    sub.translator.appid = "20221126001472283" #check baidu account
-    sub.translator.secretyKey = 'n98TwxjzHl0zYcIuGLgw'
+    sub.translator.appid = "" #check baidu account
+    sub.translator.secretyKey = '' 
     sub.generate_subtitle()
 
     print("subtitle generated")

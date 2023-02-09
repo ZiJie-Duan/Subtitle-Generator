@@ -26,6 +26,7 @@ pip install -r requirements.txt --proxy=http://[address]:[port]
 
 
 ## Usage
+If you need to use the English-Chinese translation function of this program, please register your Baidu Translator account first and register it on Baidu API website（ https://fanyi-api.baidu.com/ ）Find the APP ID and key, Then fill the two information into lines 58 and 59 of the main.py file
 
 There are two ways to start this program
 
