@@ -52,7 +52,12 @@ class SUBTITLE_GENERATOR:
 def main():
     print("subtitle generator beta_0.1")
     sub = SUBTITLE_GENERATOR()
-    sub.init_generator(sys.argv[1])
+
+    if len(sys.argv) != 2:
+        path = input("please input the path of the video file >>")
+        sub.init_generator(path)
+    else:
+        sub.init_generator(sys.argv[1])
 
     sub.translator.apiurl = 'http://api.fanyi.baidu.com/api/trans/vip/translate'
     sub.translator.appid = "" #check baidu account
