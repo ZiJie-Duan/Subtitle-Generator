@@ -31,10 +31,12 @@ There are two ways to start this program
 
 #### First
 you can use the terminal(cmd) to run the main.py file, and then translate it according to the instructions
+
 Note: first you need to activate the development environment in the terminal
 
 #### Second
 you can drag the video file into the main.py file in the scr directory
+
 Note: You need to specify the python program in the development environment in the first line of main.py file
 
 After that, the program will generate a subtitle file with the same name in the root directory of the video file, which can be played by VLC player
