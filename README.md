@@ -8,15 +8,21 @@ this is a bilingual Subtitle Generator for video
 Clone the project to localv
 
 use python to build a development environment
-'''python3 -m venv xxx_env"""
+'''
+python3 -m venv xxx_env
+'''
 
 Then activate the development environment
 
 Install all the requrment library
-'''pip install -r requirements.txt"""
+'''
+pip install -r requirements.txt
+'''
 
 If your network connection is unstable, consider using a proxy
-'''pip install -r requirements.txt --proxy=http://[address]:[port]"""
+'''
+pip install -r requirements.txt --proxy=http://[address]:[port]
+'''
 
 
 ## Usage
