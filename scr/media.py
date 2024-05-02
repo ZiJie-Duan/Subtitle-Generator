@@ -1,44 +1,36 @@
 from basic_tools import *
-from MessageBox import*
 import subprocess
 
-mp, print, orprint, printe, printse,\
-printnn, printmid, print_mode_mute,\
-print_mode_init = init_env()
+class Media:
+    """媒体音频控制类"""
 
+    def __init__(self, infile: object, cmd: object ,outfile: object=None):
+        self.infile = infile              # 输入文件路径对象
+        self.cmd = cmd                    # 命令执行对象
+        self.duration = self.get_length(self.infile()) # 获取音频时长
 
-@MessageBox(mp)
-class MEDIA:
-    def __init__(self, infile, cmd ,outfile=None):
-        self.infile = infile
-        self.cmd = cmd
-        self.duration = self.get_length(self.infile())
-
-        self.split_start = 0
-        self.split_duration = 0 
-        self.finish_flag = -1
-        # finish_flag = 1 means the audio is splited to the end
-        # it has three status: -1,1,0
-        # -1 means the audio is splite but not to the end
-        # 0 is a temporary status
-        # 1 means the audio is splited to the end
-
-        if outfile == None:
-            outfile = FILE_PATH()
-            outfile.set_path(self.infile.build_new_file("tmp.mp3"))
-            self.outfile = outfile
+        if outfile == None:       
+            # 如果没有设定输出文件路径，自动生成一个临时文件
+            self.outfile = infile.nfile(full_name="temp.mp3")
         else:
-            self.outfile = outfile
-        
-    
-    # def set_media(self, file_path):
-    #     if self.infile.set_path(file_path):
-    #         self.duration = self.get_length(self.infile())
-    #         print("set media file success")
-    #     else:
-    #         print("set media file failed")
+            self.outfile = outfile       # 设置输出文件路径
+
+        self.split_start = 0              # 分割开始时间
+        self.finish_flag = 0              # 分割完成标志
+
+
+    def init_process(self):
+        """
+        初始化进程
+        """
+        self.split_start = 0
+        self.finish_flag = 0
+
 
     def get_length(self,filename):
+        """
+        获取音频文件时长
+        """
         result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
                                 "format=duration", "-of",
                                 "default=noprint_wrappers=1:nokey=1", filename],
@@ -47,69 +39,60 @@ class MEDIA:
         return float(result.stdout)
 
 
-    def splite_audio(self,start=-1,duration=-1):
-        if start == -1 or duration == -1:
-            start = self.split_start
-            duration = self.split_duration
-        else:
-            self.split_start = start
-            self.split_duration = duration
-
-        print("splite audio")
-        print("start: {}, duration: {}".format(start,duration))
-
-        if duration == 0: #select all
-            duration = self.duration
-            self.finish_flag = 0
-        elif duration+start >= self.duration: #select to the end
-            duration = self.duration - start
-            self.finish_flag = 0
-
+    def splite_audio(self, start, duration): 
+        """
+        分割音频 start: 开始时间 duration: 时长
+        """
         self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
             .format(self.infile(),start,\
             duration,self.outfile()))
-
-    
-    def get_a_part_of_audio(self,duration=-1):
-        print("get_a_part_of_audio")
-        if self.finish_flag == 1:
-            return None
-
-        if duration == -1:
-            self.splite_audio()
-            self.split_start = self.split_start + self.split_duration
-            self.split_duration = 300
-        else:
-            self.splite_audio()
-            if self.split_start != 0:
-                self.split_start = self.split_start + self.split_duration
-            self.split_duration = duration
-
-        if self.finish_flag == 0:
-            self.finish_flag = 1
-            return self.outfile()
-        else:
-            return self.outfile()
+        return self.outfile()
         
-        
-    
-    # def change_segment(self, start=0, duration=30):
-    #     if self._timess['start'] == 0:
 
-    #     self._timess['start'] = start
-    #     self._timess['duration'] = duration
+    def get_audio_pice(self, lenth = -1):
+        """
+        通过分割音频获取音频片段
+        lenth : 时长， -1 为默认值，表示获取全部音频
+        """
+        if self.outfile.exist():
+            self.outfile.delete()
             
+        if self.finish_flag == 1:
+            return False
 
-# if __name__ == "__main__":
-#     file = PATH_CONVERT()
-#     cmd = SYSTEMcmd()
-#     media = MEDIA(file, cmd)
-#     media.set_media(r"C:\Users\lucyc\Desktop\aaa.mp4")
-#     # for x in range(6):
-#     #     media._timess["start"] = x*30
-#     #     media._timess["duration"] = 30
-#     #     media.splite_audio(new_file_name=str(x)+".wav")
-#     media._timess["start"] = 0
-#     media._timess["duration"] = 180
-#     media.splite_audio(new_file_name="a.wav")
-#     input("Press any key to exit")
+        if (lenth == -1) or (lenth + self.split_start > self.duration):
+            # 当lenth处于默认值-1 或者 分割长度加上分割开始时间大于音频总时长时
+            # 全选音频 或 全选剩余音频
+            # 请注意 self.split_start 默认值为0，所以当lenth为-1时，会全选音频
+            self.finish_flag = 1
+            return self.splite_audio(self.split_start, self.duration)
+        
+        else:
+            res = self.splite_audio(self.split_start, lenth)
+            self.split_start = self.split_start + lenth
+            return res
+
+
+
+# import vlc
+# import time
+
+# # 创建VLC实例
+# instance = vlc.Instance()
+
+# # 创建一个新的媒体播放器对象
+# player = instance.media_player_new()
+
+# md = Media(FilePath(r"C:\Users\lucyc\Desktop\7e510bff71993a21eb8f68adb133dcc8.mp4"),
+#            SystemCmd())
+
+
+# for i in range(5):
+
+#     # 设置媒体源
+#     media = instance.media_new(md.get_audio_pice(10))
+#     player.set_media(media)
+
+#     # 播放音频
+#     player.play()
+#     time.sleep(10)
