@@ -2,6 +2,7 @@
 ![image](logo.jpg)
 this is a bilingual Subtitle Generator for video
 
+# Project refactoring! Please do not use any existing code!
 
 ## Installation
 
