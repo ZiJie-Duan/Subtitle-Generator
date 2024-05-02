@@ -1,6 +1,6 @@
 from openai import OpenAI
 
-class GptApi:
+class GPTApi:
     """
     GPT API Class
     """
@@ -79,3 +79,14 @@ class WisperApi:
             response_format = response_format
         )
         return transcript
+
+
+
+# ---------- TEST CODE ------------
+
+# from config import DockerConfig
+# cfg = DockerConfig()
+# audio_file = open(r"C:\Users\lucyc\Desktop\aaaa.mp3", "rb")
+# api = WisperApi(api_key=cfg("OPENAI_API_KEY_PETER"))
+# transcript = api.transcribe(audio_file)
+# print(transcript)

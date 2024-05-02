@@ -43,7 +43,7 @@ class SubtitleWriter:
 
     def __init__(self,files:object) -> None:
         self.files = files
-        self.sub_index = 0
+        #self.sub_index = 0
         self.file_subtitle = None
     
     def open(self):
@@ -74,14 +74,15 @@ class SubtitleWriter:
         data += "\n"
         self.file_subtitle.write(data)
 
-    def write_subtitle(self,start :list, end :list, text: list):
+    def write_subtitle(self, index:int, start :list, end :list, text: list):
         """
         写入一条字幕
+        index - 字幕序号
         start - 开始时间
         end - 结束时间
         text - 字幕文本列表
         """
-        data = str(self.sub_index) + "\n"
+        data = str(index) + "\n"
         data += "{}:{}:{},{} --> {}:{}:{},{}\n"\
             .format(\
                 self.fix_zero(start[0]),\
@@ -96,12 +97,60 @@ class SubtitleWriter:
 
         for sentence in text:
             data += sentence + "\n"
-                
-        data += "\n"
+        
         self.write_line(data)
         print(data)
-        self.sub_index += 1
 
+
+class SubtitleDecoder:
+
+    def __init__(self) -> None:
+        self.subtitle = []
+        self.index = 0
+
+    def reset(self):
+        self.subtitle = []
+        self.index = 0
+
+    def decode(self, subtitle: str) -> list:
+        # [((1,1,1,234),(4,3,2,123),["Hello world","good day"]), ...]
+
+        subtitle_list = subtitle.split("\n\n")
+        for i in subtitle_list:
+            self.index += 1
+            pic = i.split("\n")
+            time_str = pic[1].split(" --> ")
+
+            start = time_str[0].split(":")
+            start_last = start.pop().split(",")
+            start += start_last
+
+            end = time_str[1].split(":")
+            end_last = end.pop().split(",")
+            end += end_last
+            
+            start = [int(i) for i in start]
+            end = [int(i) for i in end]
+
+            content = [pic[2]]
+            self.subtitle.append((self.index, start, end, content))
+
+        return self.subtitle
+
+
+
+# ---------- TEST CODE ------------
+
+# sbd = SubtitleDecoder()
+# sub = sbd.decode("""""")
+
+# from basic_tools import *
+# file = FilePath(r"C:\Users\lucyc\Desktop\jj.str")
+# subw = SubtitleWriter(file)
+# subw.open()
+# for i in sub:
+#     subw.write_subtitle(i[0],i[1],i[2],i[3])
+# subw.close()
 
 # from basic_tools import *
 

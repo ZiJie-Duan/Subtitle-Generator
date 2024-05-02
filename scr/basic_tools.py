@@ -132,6 +132,9 @@ class SystemCmd:
             pass # 其他系统（例如MAC）
 
 
+
+
+# ---------- TEST CODE ------------
 # fp = FilePath(r"C:\Users\lucyc\Desktop\kk.jpg")
 # print(fp.file_path)
 # nfp = fp.nfile(ext="go")
