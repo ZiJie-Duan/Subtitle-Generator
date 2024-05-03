@@ -28,7 +28,7 @@ class GPTApi:
                 messages = messages,
                 temperature = temperature,
                 max_tokens = max_tokens,
-                request_timeout = timeout
+                timeout = timeout
             )
         if full:
             return response
@@ -53,7 +53,7 @@ class GPTApi:
             temperature = temperature,
             max_tokens = max_tokens,
             stream=True,
-            request_timeout = timeout
+            timeout = timeout
         )
 
         if full:
@@ -77,6 +77,18 @@ class WisperApi:
             file = audio_file,
             model = model,
             response_format = response_format
+        )
+        return transcript
+
+
+    def transcribe_timestamp(self, audio_file, model = "whisper-1", 
+                             response_format = "verbose_json", 
+                             timestamp_granularities = ["word"]):
+        transcript = self.client.audio.transcriptions.create(
+            file = audio_file,
+            model = model,
+            response_format = response_format,
+            timestamp_granularities = timestamp_granularities
         )
         return transcript
 
