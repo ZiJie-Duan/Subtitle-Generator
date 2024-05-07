@@ -2,7 +2,10 @@ from basic_tools import *
 import subprocess
 
 class Media:
-    """媒体音频控制类"""
+    """媒体音频控制类
+       目前仅对音频进行操作
+       同时仅支持Windows系统
+    """
 
     def __init__(self, infile: object, cmd: object ,outfile: object=None):
         self.infile = infile              # 输入文件路径对象
@@ -43,9 +46,14 @@ class Media:
         """
         分割音频 start: 开始时间 duration: 时长
         """
-        self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"\
-            .format(self.infile(),start,\
-            duration,self.outfile()))
+        self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"
+            .format(
+                self.infile(quote = True), # quote = True 表示返回带引号的路径
+                start,
+                duration,
+                self.outfile(quote = True)
+                )
+            )
         return self.outfile()
         
 

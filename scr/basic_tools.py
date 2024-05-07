@@ -17,9 +17,12 @@ class FilePath:
         self.file_working_path = None   # 文件工作路径
         self.set_path(file_path)
     
-    def __call__(self):
+    def __call__(self, quote: bool = False):
         """返回文件完整路径"""
-        return self.file_path  
+        if quote:
+            return self.quote()
+        else:
+            return self.file_path  
     
     def _path_check(self, file_path: str):  
         """检查传入的文件路径 是否合法"""
@@ -91,6 +94,10 @@ class FilePath:
     def delete(self):
         """删除文件"""
         os.remove(self.file_path)
+
+    def quote(self):
+        """返回带引号的文件路径"""
+        return "\"" + self.file_path + "\""
 
 
 class SystemCmd:
