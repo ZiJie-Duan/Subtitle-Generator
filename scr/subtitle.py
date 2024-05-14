@@ -74,13 +74,23 @@ class SubtitleWriter:
         data += "\n"
         self.file_subtitle.write(data)
 
+    def time_convert(self, time):
+        hours = time // 3600
+        remain = time % 3600
+        min = remain // 60
+        remain = remain % 60
+        sec = remain // 1
+        msec = remain % 1
+        msec = (msec // 0.001)
+        return (int(hours),int(min),int(sec),int(msec))
+
     def write_subtitle(self, index:int, start :list, end :list, text: list):
         """
-        写入一条字幕
-        index - 字幕序号
-        start - 开始时间
-        end - 结束时间
-        text - 字幕文本列表
+        写入一条字幕 (1,1,1,234),(4,3,2,123),["Hello world","good day"]
+        index - 字幕序号 ex: 1
+        start - 开始时间 ex: (1,1,1,234)
+        end - 结束时间 ex: (4,3,2,123)
+        text - 字幕文本列表 ex: ["Hello world","good day"]
         """
         data = str(index) + "\n"
         data += "{}:{}:{},{} --> {}:{}:{},{}\n"\
@@ -100,6 +110,15 @@ class SubtitleWriter:
         
         self.write_line(data)
         print(data)
+    
+    def write_subtitle_timestamp(self, index, start, end, text):
+        """写入一条字幕，时间戳格式"""
+        self.write_subtitle(index,
+                            self.time_convert(start),
+                            self.time_convert(end),
+                            text
+                            )
+
 
 
 class SubtitleDecoder:

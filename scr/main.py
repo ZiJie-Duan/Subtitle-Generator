@@ -15,6 +15,8 @@ transcript = wis.transcribe_timestamp(audio_file)
 print(transcript)
 
 
+
+
 #----------------------------- Comst Function ---------------------------------
 
 
