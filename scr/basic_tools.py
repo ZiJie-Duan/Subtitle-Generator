@@ -1,5 +1,6 @@
 import platform
 import os
+import subprocess
  
 class FilePath:
     """
@@ -8,14 +9,20 @@ class FilePath:
     可以检测操作系统，拆分工作路径，文件名和 文件后缀
     可以根据工作路径快速构建 新的文件 灵活的指定后缀和名称
     """
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, build: bool = False):
         self.system = platform.system() # 检测操作系统
         self.file_path = None           # 文件完整路径
         self.file_name = None           # 文件完成名称
         self.file_name_no_ext = None    # 文件名称 无后缀
         self.file_ext = None            # 文件后缀
         self.file_working_path = None   # 文件工作路径
-        self.set_path(file_path)
+
+        if build:
+            # build 为True时, 传入一个相对路径, 会自动转换为绝对路径
+            fully_path = os.path.abspath(file_path)
+            self.set_path(fully_path)
+        else:
+            self.set_path(file_path)
     
     def __call__(self, quote: bool = False):
         """返回文件完整路径"""
@@ -120,16 +127,11 @@ class SystemCmd:
         """执行命令行命令, cmd为命令"""
 
         if self.system == "Windows":
-            print(cmd)
             os.system(cmd)
         else:
             pass # 其他系统（例如MAC）
 
-    # def cmd_with_return(self, cmd): 
-    #     有关执行命令并返回结果的函数
-    #     pass # 省略了代码
-    
-    def open_file(self, file_path: str):
+    def new_run(self, file_path: str):
         """打开文件"""
         
         if self.system == "Windows":
@@ -138,7 +140,8 @@ class SystemCmd:
         else:
             pass # 其他系统（例如MAC）
 
-
+    def run(self, cmd: list):
+        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
 
 
 # ---------- TEST CODE ------------

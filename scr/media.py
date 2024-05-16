@@ -1,5 +1,4 @@
 from basic_tools import *
-import subprocess
 
 class Media:
     """媒体音频控制类
@@ -34,26 +33,20 @@ class Media:
         """
         获取音频文件时长
         """
-        result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                                "format=duration", "-of",
-                                "default=noprint_wrappers=1:nokey=1", filename],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        return float(result.stdout)
+        args = ["ffprobe", "-v", "error", "-show_entries",
+                "format=duration", "-of",
+                "default=noprint_wrappers=1:nokey=1", filename]
+        return float(self.cmd.run(args))
 
 
     def splite_audio(self, start, duration): 
         """
         分割音频 start: 开始时间 duration: 时长
         """
-        self.cmd("ffmpeg -i {} -ss {} -t {} -aq 0 -map a {}"
-            .format(
-                self.infile(quote = True), # quote = True 表示返回带引号的路径
-                start,
-                duration,
-                self.outfile(quote = True)
-                )
-            )
+        args = ["ffmpeg", "-i", self.infile(), "-ss", str(start), 
+                "-t", str(duration), "-aq", "0", "-map", "a", 
+                self.outfile()]
+        self.cmd.run(args)
         return self.outfile()
         
 
@@ -73,7 +66,9 @@ class Media:
             # 全选音频 或 全选剩余音频
             # 请注意 self.split_start 默认值为0，所以当lenth为-1时，会全选音频
             self.finish_flag = 1
-            return self.splite_audio(self.split_start, self.duration)
+            res = self.splite_audio(self.split_start, self.duration)
+            self.split_start = self.duration
+            return res
         
         else:
             res = self.splite_audio(self.split_start, lenth)
