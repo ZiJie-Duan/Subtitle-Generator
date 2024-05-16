@@ -97,3 +97,4 @@ memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
 sg = SubtitleGenerator(cfg, gpt, wis, memo)
 sg.run()
 
+input() # wait for user to close the window

@@ -76,7 +76,7 @@ class AudioToSubtitleTimestamp:
     def run(self):
 
         while True:
-            audio_pice = self.media.get_audio_pice(20)
+            audio_pice = self.media.get_audio_pice(100)
             if not audio_pice:
                 break
             
@@ -243,7 +243,7 @@ class SubStampToSubtitleOriginal:
                 word_list = self.memo("TaskData", "word_timestamp")[:length+3]
 
                 min_dis = 9999999
-                match_lenth = None
+                match_index = None
                 match_sentence = None
 
                 loop = asyncio.get_event_loop()
@@ -254,10 +254,8 @@ class SubStampToSubtitleOriginal:
                     sentence_origin = " ".join(words)
                     sentence_slice.append(sentence_origin)
                 sentence_slice.reverse()
-                print("[SubStampToSubtitleOriginal] : Sentence Slice : {}".format(sentence_slice))
-                input("Press Enter to continue...")
                 
-                index_shift = max(length-3,0) - 1
+                index_shift = max(length-3,0)
                 embeddings = loop.run_until_complete(
                     get_embedding_list_async(self.gpt, sentence_slice))
 
@@ -267,11 +265,11 @@ class SubStampToSubtitleOriginal:
 
                     if dis < min_dis:
                         min_dis = dis
-                        match_lenth = ii
+                        match_index = ii
                         match_sentence = i
                 
                 start_time = word_list[0]["start"]
-                end_time = word_list[match_lenth-1]["end"]
+                end_time = word_list[match_index]["end"]
 
                 print("[SubStampToSubtitleOriginal] : Processing Sentence : {}".format(sentence))
                 print("[SubStampToSubtitleOriginal] : Matched Words       : {}".format(sentence_slice[match_sentence]))
@@ -283,7 +281,7 @@ class SubStampToSubtitleOriginal:
                     "end": end_time
                 })
                 self.memo.update("TaskData", "word_timestamp", 
-                                 self.memo("TaskData", "word_timestamp")[match_lenth:])
+                                 self.memo("TaskData", "word_timestamp")[match_index+1:])
                 self.memo.obj_update("TaskData", "sentences").pop(0)
                 self.memo.save()
             
