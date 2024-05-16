@@ -65,6 +65,11 @@ class GPTApi:
                 word = chunk["choices"][0].get("delta", {}).get("content")
                 if word:
                     yield word 
+
+
+    def get_embedding(self, text, model="text-embedding-3-large"):
+        text = text.replace("\n", " ")
+        return self.client.embeddings.create(input = [text], model=model).data[0].embedding
     
 
 class WisperApi:
@@ -91,6 +96,8 @@ class WisperApi:
             timestamp_granularities = timestamp_granularities
         )
         return transcript
+
+
 
 
 

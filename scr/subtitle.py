@@ -104,12 +104,10 @@ class SubtitleWriter:
                 self.fix_zero(end[2]),\
                 self.fix_zero(end[3],msec=True),\
                 text)
-
         for sentence in text:
             data += sentence + "\n"
         
         self.write_line(data)
-        print(data)
     
     def write_subtitle_timestamp(self, index, start, end, text):
         """写入一条字幕，时间戳格式"""
