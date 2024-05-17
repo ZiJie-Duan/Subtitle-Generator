@@ -3,7 +3,7 @@ from config import DockerConfig
 from media import Media
 from openai_api import GPTApi, WisperApi
 from memo import Memo
-from core import AudioToSubtitleTimestamp, SubStampToSubtitleOriginal
+from core import AudioToSubtitleTimestamp, SubStampToSubtitleOriginal, SubStampToSubtitleTranslation
 from subtitle import SubtitleWriter
 import os
 
@@ -59,6 +59,14 @@ class SubtitleGenerator:
                 task.run()
                 return
 
+            elif self.memo("TaskInfo", "Task_Type") == "toSubtitleTranslation":
+                timestamp_file = FilePath(self.memo("TaskInfo", "Task_File"))
+                subwriter = SubtitleWriter(FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt"))
+                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
+                task.continue_task()
+                task.run()
+                return
+
         else:
             # 初始化任务 Info
             self.memo.add_section("TaskInfo")
@@ -74,12 +82,24 @@ class SubtitleGenerator:
 
         elif self.input_file.file_ext in ["json"]:
             # Task 2: Transfer timestamp to subtitle
-            timestamp_file = self.input_file
-            subwriter = SubtitleWriter(self.input_file.nfile(ext="srt"))
-            task = SubStampToSubtitleOriginal(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
-            task.init_task()
-            task.run()
-            return
+            print("[SubtitleGenerator] : Transfer timestamp to subtitle.")
+            print("[SubtitleGenerator] : please choose the language you want to translate.")
+            language = input("[SubtitleGenerator] : Language / [None] for Original >>")
+
+            if language == "None" or language == "":
+                timestamp_file = self.input_file
+                subwriter = SubtitleWriter(self.input_file.nfile(ext="srt"))
+                task = SubStampToSubtitleOriginal(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
+                task.init_task()
+                task.run()
+                return
+            else:
+                timestamp_file = self.input_file
+                subwriter = SubtitleWriter(self.input_file.nfile(ext="srt"))
+                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file, language)
+                task.init_task()
+                task.run()
+                return
         
         else:
             print("[SubtitleGenerator] : Not support file type.")
