@@ -323,6 +323,25 @@ subtitle text 2
 ---
 Maintain the natural flow of the dialogue and ensure each segment can independently convey a complete meaning. Do not provide any explanations with your outputs. Do not modify any text.
     """
+
+    prompt_match = """
+You are a bilingual subtitle matcher. Your task is to match the text enclosed in <<<>>> with the text enclosed in ((( ))). Ensure that the content of the two corresponds to each other.
+The text enclosed in <<<>>> is already segmented with the "|" symbol. Please match each segment in ((( ))) with one segment in <<<>>>.
+Make sure not to modify any text and do not miss any characters. The segments in ((( ))) do not need to be coherent or fluent.
+Each segment should be presented in the following format:
+---
+Segment text 1 from <<<>>>
+-
+Segment text 1 from ((()))
+---
+Segment text 2 from <<<>>>
+
+-
+Segment text 2 from ((()))
+---
+Please do not provide any explanations and do not answer any questions.
+"""
+
     usermsg = "<<<{}>>>".format(text)
     message = [
         {"role": "system", "content": prompt_translation},
@@ -339,8 +358,23 @@ Maintain the natural flow of the dialogue and ensure each segment can independen
     response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
     sentences = response[4:-4].split("\n---\n")
 
-    return sentences
+    usermsg = "<<<{}>>> \n((({})))".format("|".join(sentences), text)
+    message = [
+        {"role": "system", "content": prompt_match},
+        {"role": "user", "content": usermsg}
+    ]
+    response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
+    sentences = response[4:-4].split("\n---\n")
+    sentences = [x.split("\n-\n") for x in sentences]
+    translation = [x[0] for x in sentences]
+    match_only = [x[1] for x in sentences]
 
+    print("DEBUG 原文: ", text)
+    print("DEBUG 翻译: ", translation)
+    print("DEBUG 匹配: ", match_only)
+    input("DEBUG")
+
+    return translation, match_only
 
 
 
@@ -352,6 +386,7 @@ class SubStampToSubtitleTranslation:
         Task_Type = "toSubtitleTranslation"
         Task_Name = "SubStampToSubtitleTranslation_{file_name}"
         Task_Progress =  23 FLOAT
+        Task_Language = "English"
     }
 
     TaskData:{
@@ -388,25 +423,27 @@ class SubStampToSubtitleTranslation:
             self.timestamp = json.load(f)
     
     def init_task(self):
-        self.memo.update("TaskInfo", "Task_Type", "toSubtitleOriginal")
+        self.memo.update("TaskInfo", "Task_Type", "toSubtitleTranslation")
         self.memo.update("TaskInfo", "Task_File", self.timestamp_file())
-        self.memo.update("TaskInfo", "Task_Name", "SubStampToSubtitleOriginal_{}".format(self.memo("TaskInfo", "Task_File")))
+        self.memo.update("TaskInfo", "Task_Name", "SubStampToSubtitleTranslation_{}".format(self.memo("TaskInfo", "Task_File")))
         self.memo.update("TaskInfo", "Task_Date", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         self.memo.update("TaskInfo", "Task_Progress", 0)
+        self.memo.update("TaskInfo", "Task_Language", self.language)
         self.memo.update("TaskData", "paragraph_index", 0)
         self.memo.update("TaskData", "paragraph", "")
         self.memo.update("TaskData", "sentences", [])
+        self.memo.update("TaskData", "match_anchor", [])
         self.memo.update("TaskData", "word_timestamp", [])
         self.memo.update("TaskData", "subtitle_match", [])
         self.memo.update("TaskData", "subtitle_srt", "")
-        print("[SubStampToSubtitleOriginal] : Task Init.")
+        print("[SubStampToSubtitleTranslation] : Task Init.")
 
     def continue_task(self):
-        print("[SubStampToSubtitleOriginal] : Continue Task")
+        print("[SubStampToSubtitleTranslation] : Continue Task")
 
     def update_progress(self):
         self.memo.update("TaskInfo", "Task_Progress", self.memo("TaskData", "paragraph_index")/len(self.timestamp) * 100)
-        print("[SubStampToSubtitleOriginal] : Progress : {}%".format(str(self.memo("TaskInfo", "Task_Progress"))))
+        print("[SubStampToSubtitleTranslation] : Progress : {}%".format(str(self.memo("TaskInfo", "Task_Progress"))))
     
     def run(self):
         
@@ -416,7 +453,7 @@ class SubStampToSubtitleTranslation:
             if paragraph_index == len(self.timestamp):
                 break
 
-            print("[SubStampToSubtitleOriginal] : Processing Paragraph : {}".format(paragraph_index))
+            print("[SubStampToSubtitleTranslation] : Processing Paragraph : {}".format(paragraph_index))
             
             if self.memo("TaskData", "paragraph") == "":
                 self.memo.update("TaskData", "paragraph", self.timestamp[paragraph_index]["text"])
@@ -425,8 +462,9 @@ class SubStampToSubtitleTranslation:
                 self.memo.update("TaskData", "word_timestamp", self.timestamp[paragraph_index]["word"])
             
             if self.memo("TaskData", "sentences") == []:
-                sentences = gpt_split_sentence_translation(self.gpt, self.memo("TaskData", "paragraph"), self.language)
-                self.memo.update("TaskData", "sentences", sentences)
+                sentence, match_anchor = gpt_split_sentence_translation(self.gpt, self.memo("TaskData", "paragraph"), self.language)
+                self.memo.update("TaskData", "sentences", sentence)
+                self.memo.update("TaskData", "match_anchor", match_anchor)
 
 
             while True:
@@ -434,9 +472,11 @@ class SubStampToSubtitleTranslation:
                     break
                 
                 sentence = self.memo("TaskData", "sentences")[0]
+                match_anchor = self.memo("TaskData", "match_anchor")[0]
+                length = len(match_anchor.split(" "))
 
-                v1 = self.gpt.get_embedding(sentence)
-                word_list = self.memo("TaskData", "word_timestamp")[:16]
+                v1 = self.gpt.get_embedding(match_anchor)
+                word_list = self.memo("TaskData", "word_timestamp")[:length+3]
 
                 min_dis = 9999999
                 match_index = None
@@ -444,14 +484,19 @@ class SubStampToSubtitleTranslation:
 
                 loop = asyncio.get_event_loop()
 
+                if not word_list:
+                    input("DEBUG")
+                    raise ValueError("word_list is empty")
+
                 sentence_slice = []
-                for i in range(len(word_list), 0, -1):
+                for i in range(len(word_list), max(length-3,0) , -1):
                     words = [x["word"] for x in word_list[:i]]
                     sentence_origin = " ".join(words)
+                    if sentence_origin == "": continue
                     sentence_slice.append(sentence_origin)
                 sentence_slice.reverse()
                 
-                index_shift = 0
+                index_shift =  max(length-3,0)
                 embeddings = loop.run_until_complete(
                     get_embedding_list_async(self.gpt, sentence_slice))
 
@@ -467,8 +512,9 @@ class SubStampToSubtitleTranslation:
                 start_time = word_list[0]["start"]
                 end_time = word_list[match_index]["end"]
 
-                print("[SubStampToSubtitleOriginal] : Processing Sentence : {}".format(sentence))
-                print("[SubStampToSubtitleOriginal] : Matched Words       : {}".format(sentence_slice[match_sentence]))
+                print("[SubStampToSubtitleTranslation] : Processing Sentence : {}".format(sentence))
+                print("[SubStampToSubtitleTranslation] : Rebuild Words       : {}".format(match_anchor))
+                print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(sentence_slice[match_sentence]))
                 
                 # 将以下三个操作 合并为一个操作 原子性操作
                 self.memo.obj_update("TaskData", "subtitle_match").append({
@@ -479,11 +525,13 @@ class SubStampToSubtitleTranslation:
                 self.memo.update("TaskData", "word_timestamp", 
                                  self.memo("TaskData", "word_timestamp")[match_index+1:])
                 self.memo.obj_update("TaskData", "sentences").pop(0)
+                self.memo.obj_update("TaskData", "match_anchor").pop(0)
                 self.memo.save()
             
             self.memo.update("TaskData", "paragraph_index", paragraph_index+1, not_save=True)
             self.memo.update("TaskData", "paragraph", "", not_save=True)
             self.memo.update("TaskData", "sentences", [], not_save=True)
+            self.memo.update("TaskData", "match_anchor", [], not_save=True)
             self.memo.update("TaskData", "word_timestamp", [], not_save=True)
             self.update_progress()
 
@@ -497,3 +545,6 @@ class SubStampToSubtitleTranslation:
             self.subwriter.write_subtitle_timestamp(index, i["start"], i["end"], [i["text"]])
             index += 1
         self.subwriter.close()
+
+
+

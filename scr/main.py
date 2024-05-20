@@ -62,7 +62,8 @@ class SubtitleGenerator:
             elif self.memo("TaskInfo", "Task_Type") == "toSubtitleTranslation":
                 timestamp_file = FilePath(self.memo("TaskInfo", "Task_File"))
                 subwriter = SubtitleWriter(FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt"))
-                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
+                language = self.memo("TaskInfo", "Task_Language")
+                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file, language)
                 task.continue_task()
                 task.run()
                 return
