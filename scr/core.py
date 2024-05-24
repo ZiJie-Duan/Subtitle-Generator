@@ -20,6 +20,40 @@ TaskInfo = {
 在Section "TaskData" 中定义 其他的客制化数据
 '''
 
+def levenshtein_distance(s1, s2):
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+
+def match_sentence(short_sentence, word_list):
+    short_sentence = short_sentence.replace(" ", "")
+    min_dis = 9999999
+    match_index = None
+
+    for i in range(0, len(word_list)):
+        dis = levenshtein_distance(short_sentence, "".join(word_list[0:i+1]))
+        if dis <= min_dis:
+            min_dis = dis
+            match_index = i
+    
+    return match_index, "".join(word_list[0:match_index+1])
+
+
 class AudioToSubtitleTimestamp:
     """
     Task Transfer audio to subtitle with timestamp
@@ -108,7 +142,6 @@ class AudioToSubtitleTimestamp:
             json.dump(self.memo("TaskData", "subtitle_timestamp"), f)
 
 
-
 def gpt_split_sentence(gpt: GPTApi, text: str):
     prompt = """
 You are a subtitle segmenter. Your task is to segment the text enclosed in <<<>>> symbols into short sections based on semantics and pauses, with each section not exceeding 12 words and containing no punctuation. Each segmented subtitle should be presented in the following format:
@@ -126,6 +159,8 @@ Maintain the natural flow of the dialogue and ensure each segment can independen
     ]
     response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
     sentences = response[4:-4].split("\n---\n")
+
+    print("DEBUG 原文: ", text)
     return sentences
 
 
@@ -231,49 +266,28 @@ class SubStampToSubtitleOriginal:
                 sentences = gpt_split_sentence(self.gpt, self.memo("TaskData", "paragraph"))
                 self.memo.update("TaskData", "sentences", sentences)
 
-
             while True:
                 if self.memo("TaskData", "sentences") == []:
                     break
                 
                 sentence = self.memo("TaskData", "sentences")[0]
-                length = len(sentence.split(" "))
 
-                v1 = self.gpt.get_embedding(sentence)
-                word_list = self.memo("TaskData", "word_timestamp")[:length+3]
+                # 英文和中文的分词不同，需要进行匹配
+                # 考虑性能 和 分词复杂度， 在这里选择不进行长度相关的分词
+                # 直接将整个段落 与 时间戳进行匹配
+                #length = len(sentence.split(" "))
 
-                min_dis = 9999999
-                match_index = None
-                match_sentence = None
-
-                loop = asyncio.get_event_loop()
-
-                sentence_slice = []
-                for i in range(len(word_list), max(length-3,0), -1):
-                    words = [x["word"] for x in word_list[:i]]
-                    sentence_origin = " ".join(words)
-                    sentence_slice.append(sentence_origin)
-                sentence_slice.reverse()
+                words_data = self.memo("TaskData", "word_timestamp")[:]
                 
-                index_shift = max(length-3,0)
-                embeddings = loop.run_until_complete(
-                    get_embedding_list_async(self.gpt, sentence_slice))
-
-                for i in range(len(embeddings)):
-                    ii = i + index_shift
-                    dis = euclidean_distance(v1, embeddings[i])
-
-                    if dis < min_dis:
-                        min_dis = dis
-                        match_index = ii
-                        match_sentence = i
-                
-                start_time = word_list[0]["start"]
-                end_time = word_list[match_index]["end"]
+                words_list = [x["word"] for x in words_data]
+                last_index, matched_st = match_sentence(sentence, words_list)
 
                 print("[SubStampToSubtitleOriginal] : Processing Sentence : {}".format(sentence))
-                print("[SubStampToSubtitleOriginal] : Matched Words       : {}".format(sentence_slice[match_sentence]))
+                print("[SubStampToSubtitleOriginal] : Matched Words       : {}".format(matched_st))
                 
+                start_time = words_data[0]["start"]
+                end_time = words_data[last_index]["end"]
+
                 # 将以下三个操作 合并为一个操作 原子性操作
                 self.memo.obj_update("TaskData", "subtitle_match").append({
                     "text": sentence,
@@ -281,7 +295,7 @@ class SubStampToSubtitleOriginal:
                     "end": end_time
                 })
                 self.memo.update("TaskData", "word_timestamp", 
-                                 self.memo("TaskData", "word_timestamp")[match_index+1:])
+                                 self.memo("TaskData", "word_timestamp")[last_index+1:])
                 self.memo.obj_update("TaskData", "sentences").pop(0)
                 self.memo.save()
             
@@ -292,7 +306,7 @@ class SubStampToSubtitleOriginal:
             self.update_progress()
 
         self.save()
-        #self.memo.clean()
+        self.memo.clean()
 
     def save(self):
         self.subwriter.open()
@@ -307,37 +321,37 @@ class SubStampToSubtitleOriginal:
 def gpt_split_sentence_translation(gpt: GPTApi, text: str, language: str):
 
     prompt_translation = """
-You are a subtitle translator. Your task is to translate the text enclosed by <<<>>> into {}, using fluent, natural, and idiomatic {}. You may freely add, remove, or modify the translation to achieve a more ideal expression. If any annotations are needed, use parentheses for notes.
+You are a professional translator proficient in multiple languages. Your task is to translate the text enclosed by <<<>>> into {}, achieving the most natural and fluent translation possible.
 Present in the following format:
 ---
-translated paragraph
+example translated paragraph
 ---
 """.format(language, language)
 
     prompt_split = """
 You are a subtitle segmenter. Your task is to segment the text enclosed in <<<>>> symbols into short sections based on semantics and pauses, with each section not exceeding 12 words and containing no punctuation. Each segmented subtitle should be presented in the following format:
 ---
-subtitle text 1
+example subtitle text 1
 ---
-subtitle text 2
+example subtitle text 2
 ---
-Maintain the natural flow of the dialogue and ensure each segment can independently convey a complete meaning. Do not provide any explanations with your outputs. Do not modify any text.
+Maintain the natural flow of the dialogue and ensure each segment can independently convey a complete meaning. Do not provide any explanations with your outputs. Do not modify any text. 
     """
 
     prompt_match = """
-You are a bilingual subtitle matcher. Your task is to match the text enclosed in <<<>>> with the text enclosed in ((( ))). Ensure that the content of the two corresponds to each other.
-The text enclosed in <<<>>> is already segmented with the "|" symbol. Please match each segment in ((( ))) with one segment in <<<>>>.
-Make sure not to modify any text and do not miss any characters. The segments in ((( ))) do not need to be coherent or fluent.
+You are a multilingual subtitle proofreader. Your task is to match sentences in two different languages that have the same meaning. The final output will be the segmented results in both languages, matched in the specified format.
+
+The text enclosed in <<<>>> contains fixed text, which is interspersed with the "|" symbol. Each "|" symbol divides the fixed text into different segments. For example, "hello|this is an example|are you ok?" is divided into three segments: "hello," "this is an example," and "are you ok?" These texts will be enclosed in <<<>>>. The text enclosed in ((( ))) contains the text to be matched. The text to be matched does not have any separators. You need to match the text to be matched with each segment of the fixed text according to the segments of the fixed text. You cannot modify any characters or change the order, only segment and match according to the "|" symbol.
+
 Each segment should be presented in the following format:
 ---
-Segment text 1 from <<<>>>
+example fixed text 1
 -
-Segment text 1 from ((()))
+example matched text 1
 ---
-Segment text 2 from <<<>>>
-
+example fixed text 2
 -
-Segment text 2 from ((()))
+example matched text 2
 ---
 Please do not provide any explanations and do not answer any questions.
 """
@@ -372,7 +386,6 @@ Please do not provide any explanations and do not answer any questions.
     print("DEBUG 原文: ", text)
     print("DEBUG 翻译: ", translation)
     print("DEBUG 匹配: ", match_only)
-    input("DEBUG")
 
     return translation, match_only
 
@@ -473,48 +486,17 @@ class SubStampToSubtitleTranslation:
                 
                 sentence = self.memo("TaskData", "sentences")[0]
                 match_anchor = self.memo("TaskData", "match_anchor")[0]
-                length = len(match_anchor.split(" "))
 
-                v1 = self.gpt.get_embedding(match_anchor)
-                word_list = self.memo("TaskData", "word_timestamp")[:length+3]
+                word_list = self.memo("TaskData", "word_timestamp")[:]
 
-                min_dis = 9999999
-                match_index = None
-                match_sentence = None
-
-                loop = asyncio.get_event_loop()
-
-                if not word_list:
-                    input("DEBUG")
-                    raise ValueError("word_list is empty")
-
-                sentence_slice = []
-                for i in range(len(word_list), max(length-3,0) , -1):
-                    words = [x["word"] for x in word_list[:i]]
-                    sentence_origin = " ".join(words)
-                    if sentence_origin == "": continue
-                    sentence_slice.append(sentence_origin)
-                sentence_slice.reverse()
-                
-                index_shift =  max(length-3,0)
-                embeddings = loop.run_until_complete(
-                    get_embedding_list_async(self.gpt, sentence_slice))
-
-                for i in range(len(embeddings)):
-                    ii = i + index_shift
-                    dis = euclidean_distance(v1, embeddings[i])
-
-                    if dis < min_dis:
-                        min_dis = dis
-                        match_index = ii
-                        match_sentence = i
+                last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
                 
                 start_time = word_list[0]["start"]
-                end_time = word_list[match_index]["end"]
+                end_time = word_list[last_index]["end"]
 
                 print("[SubStampToSubtitleTranslation] : Processing Sentence : {}".format(sentence))
                 print("[SubStampToSubtitleTranslation] : Rebuild Words       : {}".format(match_anchor))
-                print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(sentence_slice[match_sentence]))
+                print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(matched_st))
                 
                 # 将以下三个操作 合并为一个操作 原子性操作
                 self.memo.obj_update("TaskData", "subtitle_match").append({
@@ -523,7 +505,7 @@ class SubStampToSubtitleTranslation:
                     "end": end_time
                 })
                 self.memo.update("TaskData", "word_timestamp", 
-                                 self.memo("TaskData", "word_timestamp")[match_index+1:])
+                                 self.memo("TaskData", "word_timestamp")[last_index+1:])
                 self.memo.obj_update("TaskData", "sentences").pop(0)
                 self.memo.obj_update("TaskData", "match_anchor").pop(0)
                 self.memo.save()
@@ -536,7 +518,7 @@ class SubStampToSubtitleTranslation:
             self.update_progress()
 
         self.save()
-        #self.memo.clean()
+        self.memo.clean()
 
     def save(self):
         self.subwriter.open()

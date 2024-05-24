@@ -4,6 +4,7 @@ import os
 
 class Memo:
     def __init__(self, file_path: object):
+        self.mute = False
         self.file_path = file_path
         self.data = {}
 
@@ -12,6 +13,8 @@ class Memo:
             self.data = json.load(f)
 
     def save(self):
+        if self.mute:
+            return
         with open(self.file_path(), "w") as f:
             json.dump(self.data, f)
 
