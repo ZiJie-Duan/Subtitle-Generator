@@ -339,9 +339,12 @@ Maintain the natural flow of the dialogue and ensure each segment can independen
     """
 
     prompt_match = """
-You are a multilingual subtitle proofreader. Your task is to match sentences in two different languages that have the same meaning. The final output will be the segmented results in both languages, matched in the specified format.
+Your task is to match sentences in two different languages with the same meaning. The final output will be segmented results in both languages, matched in the specified format.
 
-The text enclosed in <<<>>> contains fixed text, which is interspersed with the "|" symbol. Each "|" symbol divides the fixed text into different segments. For example, "hello|this is an example|are you ok?" is divided into three segments: "hello," "this is an example," and "are you ok?" These texts will be enclosed in <<<>>>. The text enclosed in ((( ))) contains the text to be matched. The text to be matched does not have any separators. You need to match the text to be matched with each segment of the fixed text according to the segments of the fixed text. You cannot modify any characters or change the order, only segment and match according to the "|" symbol.
+Text in <<<>>> contains fixed text, segmented by "|".
+Text in ((( ))) contains text to be matched, without separators.
+Match each segment of the fixed text with a unique segment from the text to be matched.
+Do not modify any characters or change the order.
 
 Each segment should be presented in the following format:
 ---
@@ -355,13 +358,15 @@ example matched text 2
 ---
 Please do not provide any explanations and do not answer any questions.
 """
+# 有问题分割 存在重复？？？
+# 中置声道提取？
 
     usermsg = "<<<{}>>>".format(text)
     message = [
         {"role": "system", "content": prompt_translation},
         {"role": "user", "content": usermsg}
     ]
-    response = gpt.query(message, max_tokens=4000, temperature=0.5, model="gpt-4o")
+    response = gpt.query(message, max_tokens=4000, temperature=0.2, model="gpt-4o")
     sentences = response[4:-4]
 
     usermsg = "<<<{}>>>".format(sentences)
@@ -369,7 +374,7 @@ Please do not provide any explanations and do not answer any questions.
         {"role": "system", "content": prompt_split},
         {"role": "user", "content": usermsg}
     ]
-    response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
+    response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o")
     sentences = response[4:-4].split("\n---\n")
 
     usermsg = "<<<{}>>> \n((({})))".format("|".join(sentences), text)
@@ -377,7 +382,7 @@ Please do not provide any explanations and do not answer any questions.
         {"role": "system", "content": prompt_match},
         {"role": "user", "content": usermsg}
     ]
-    response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
+    response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o")
     sentences = response[4:-4].split("\n---\n")
     sentences = [x.split("\n-\n") for x in sentences]
     translation = [x[0] for x in sentences]
@@ -488,6 +493,13 @@ class SubStampToSubtitleTranslation:
                 match_anchor = self.memo("TaskData", "match_anchor")[0]
 
                 word_list = self.memo("TaskData", "word_timestamp")[:]
+
+                if len(word_list) == 0:
+                    print("[SubStampToSubtitleTranslation] : Force Match")
+                    print("[SubStampToSubtitleTranslation] : Sentence : {}".format(sentence))
+                    print("[SubStampToSubtitleTranslation] : Matched anchor : {}".format(match_anchor))
+                    print("[SubStampToSubtitleTranslation] : Other Sentence : {}".format(self.memo("TaskData", "sentences")[1:]))
+                    
 
                 last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
                 
