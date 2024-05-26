@@ -343,8 +343,7 @@ Your task is to match sentences in two different languages with the same meaning
 
 Text in <<<>>> contains fixed text, segmented by "|".
 Text in ((( ))) contains text to be matched, without separators.
-Match each segment of the fixed text with a unique segment from the text to be matched.
-Do not modify any characters or change the order.
+Match each segment of the fixed text with the most accurate segment from the text to be matched, ensuring the best possible meaning match. Multiple segments can be matched with each other, but aim for one-to-one correspondence as much as possible. Try to match the text to be matched in sequence.
 
 Each segment should be presented in the following format:
 ---
