@@ -177,7 +177,7 @@ Maintain the natural flow of the dialogue and ensure each segment can independen
         input("Press Enter to Exit...")
         exit(0)
 
-    print("DEBUG 原文: ", text)
+    # print("DEBUG 原文: ", text)
     return sentences
 
 
@@ -302,7 +302,6 @@ class SubStampToSubtitleOriginal:
                     print(self.memo("TaskData", "sentences"))
                     print("[SubStampToSubtitleOriginal] : Error, Segmentation misplacement leads to an empty list.")
                     print("[SubStampToSubtitleOriginal] : This error will cause partial misalignment of subtitles and some subtitles not to display, but it will not affect subsequent subtitles. The next version will fix this issue.")
-                    input("Press Enter to continue...")
                     break
 
                 words_list = [x["word"] for x in words_data]
@@ -384,7 +383,7 @@ example matched text 2
 Please do not provide any explanations and do not answer any questions.
 """
     success = False
-    print("DEBUG 原文: ", text)
+    #print("DEBUG 原文: ", text)
     for i in range(5):
         try:
             usermsg = "<<<{}>>>".format(text)
@@ -394,7 +393,7 @@ Please do not provide any explanations and do not answer any questions.
             ]
             response = gpt.query(message, max_tokens=4000, temperature=0.2, model="gpt-4o", timeout=120)
             sentences = response[4:-4]
-            print("DEBUG stc: ", sentences)
+            #print("DEBUG stc: ", sentences)
 
             usermsg = "<<<{}>>>".format(sentences)
             message = [
@@ -403,7 +402,7 @@ Please do not provide any explanations and do not answer any questions.
             ]
             response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=120)
             sentences = response[4:-4].split("\n---\n")
-            print("DEBUG stc: ", sentences)
+            #print("DEBUG stc: ", sentences)
 
             usermsg = "<<<{}>>> \n((({})))".format("|".join(sentences), text)
             message = [
@@ -412,7 +411,7 @@ Please do not provide any explanations and do not answer any questions.
             ]
             response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=120)
             sentences = response[4:-4].split("\n---\n")
-            print("DEBUG stc: ", sentences)
+            #print("DEBUG stc: ", sentences)
             sentences = [x.split("\n-\n") for x in sentences]
             translation = [x[0] for x in sentences]
             match_only = [x[1] for x in sentences]
@@ -432,9 +431,9 @@ Please do not provide any explanations and do not answer any questions.
         input("Press Enter to Exit...")
         exit(0)
 
-    print("DEBUG 原文: ", text)
-    print("DEBUG 翻译: ", translation)
-    print("DEBUG 匹配: ", match_only)
+    # print("DEBUG 原文: ", text)
+    # print("DEBUG 翻译: ", translation)
+    # print("DEBUG 匹配: ", match_only)
 
     return translation, match_only
 
@@ -544,7 +543,6 @@ class SubStampToSubtitleTranslation:
                     print(self.memo("TaskData", "sentences"))
                     print("[SubStampToSubtitleTranslation] : Error, Segmentation misplacement leads to an empty list.")
                     print("[SubStampToSubtitleTranslation] : This error will cause partial misalignment of subtitles and some subtitles not to display, but it will not affect subsequent subtitles. The next version will fix this issue.")
-                    input("Press Enter to continue...")
                     break
                     
                 last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
