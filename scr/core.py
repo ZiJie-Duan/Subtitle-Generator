@@ -368,7 +368,7 @@ Your task is to match sentences in two different languages that have the same me
 
 Text within <<<>>> contains fixed text, segmented by "|".
 Text within ((( ))) contains text to be matched, without separators.
-Match each segment of the fixed text with the most accurate segment from the text to be matched, ensuring the best possible meaning match. Ensure a one-to-one correspondence as much as possible. Match the text to be matched in sequence. Each fixed text segment must be matched with one segment from the text to be matched, leaving no segments unmatched.
+Match each segment of the fixed text with the most accurate segment from the text to be matched, ensuring the best possible meaning match. Multiple segments can be matched with each other, but aim for one-to-one correspondence as much as possible. Try to match the text to be matched in sequence.
 
 Each segment should be presented in the following format:
 ---
@@ -437,7 +437,49 @@ Please do not provide any explanations and do not answer any questions.
 
     return translation, match_only
 
+def sliding_matching(words_data, sentences):
+    # remove all spaces
+    sentences = [x.replace(" ", "") for x in sentences]
+    words = []
+    words_map = []
+    time_map = []
+    location = 0
+    
+    for i, word in enumerate(words_data):
+        wordStr = word["word"]
+        for char in wordStr:
+            words.append(char)
+            words_map.append(i)
+    
 
+    for sentence in sentences:
+        min_distance = 9999999
+        min_location = 0
+
+        for i in range(0, len(words)-len(sentence)+1):
+            be_matched = "".join(words[i:i+len(sentence)])
+            distance = levenshtein_distance(be_matched, sentence)
+            distance += abs(i - location) * 0.1
+
+            #print("be_matched: {} distance: {}, len {}".format(be_matched, distance, len(be_matched)))
+            if distance < min_distance:
+                min_distance = distance
+                min_location = i
+
+        location += len(sentence)
+        print("\nsentence: ", sentence)
+        print("Matched : ", "".join(words[min_location:min_location+len(sentence)]))
+
+        if words_data[words_map[min_location]]["end"] - words_data[words_map[min_location]]["start"] > 2:
+            start_time = words_data[words_map[min_location]]["end"] - 1.5
+        else:
+            start_time = words_data[words_map[min_location]]["start"]
+        time_map.append(
+            (start_time,
+             words_data[words_map[min_location + len(sentence)-1]]["end"])
+        )
+    
+    return time_map
 
 class SubStampToSubtitleTranslation:
     """
@@ -528,43 +570,67 @@ class SubStampToSubtitleTranslation:
                 self.memo.update("TaskData", "match_anchor", match_anchor)
 
 
-            while True:
-                if self.memo("TaskData", "sentences") == []:
-                    break
+            # new alg to match sentence
+            # ------------- NEW ALG ----------------
+            if self.memo("TaskData", "sentences") == []:
+                break
+            
+            sentence = self.memo("TaskData", "sentences")
+            match_anchor = self.memo("TaskData", "match_anchor")
+
+            word_list = self.memo("TaskData", "word_timestamp")
                 
-                sentence = self.memo("TaskData", "sentences")[0]
-                match_anchor = self.memo("TaskData", "match_anchor")[0]
-
-                word_list = self.memo("TaskData", "word_timestamp")[:]
-
-                if len(word_list) == 0:
-                    print(word_list)
-                    print(sentence)
-                    print(self.memo("TaskData", "sentences"))
-                    print("[SubStampToSubtitleTranslation] : Error, Segmentation misplacement leads to an empty list.")
-                    print("[SubStampToSubtitleTranslation] : This error will cause partial misalignment of subtitles and some subtitles not to display, but it will not affect subsequent subtitles. The next version will fix this issue.")
-                    break
-                    
-                last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
-                
-                start_time = word_list[0]["start"]
-                end_time = word_list[last_index]["end"]
-
-                print("[SubStampToSubtitleTranslation] : Processing Sentence : {}".format(sentence))
-                print("[SubStampToSubtitleTranslation] : Rebuild Words       : {}".format(match_anchor))
-                print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(matched_st))
+            time_map = sliding_matching(word_list, match_anchor)
+            
+            for i in range(len(sentence)):
+                start_time = time_map[i][0]
+                end_time = time_map[i][1]
                 
                 # 将以下三个操作 合并为一个操作 原子性操作
                 self.memo.obj_update("TaskData", "subtitle_match").append({
-                    "text": sentence,
+                    "text": sentence[i],
                     "start": start_time,
                     "end": end_time
                 })
-                self.memo.update("TaskData", "word_timestamp", 
-                                 self.memo("TaskData", "word_timestamp")[last_index+1:])
-                self.memo.obj_update("TaskData", "sentences").pop(0)
-                self.memo.obj_update("TaskData", "match_anchor").pop(0)
-                self.memo.save()
+            # ------------- NEW ALG ----------------
+
+            # while True:
+            #     if self.memo("TaskData", "sentences") == []:
+            #         break
+                
+            #     sentence = self.memo("TaskData", "sentences")[0]
+            #     match_anchor = self.memo("TaskData", "match_anchor")[0]
+
+            #     word_list = self.memo("TaskData", "word_timestamp")[:]
+
+            #     if len(word_list) == 0:
+            #         print(word_list)
+            #         print(sentence)
+            #         print(self.memo("TaskData", "sentences"))
+            #         print("[SubStampToSubtitleTranslation] : Error, Segmentation misplacement leads to an empty list.")
+            #         print("[SubStampToSubtitleTranslation] : This error will cause partial misalignment of subtitles and some subtitles not to display, but it will not affect subsequent subtitles. The next version will fix this issue.")
+            #         break
+                    
+            #     last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
+                
+            #     start_time = word_list[0]["start"]
+            #     end_time = word_list[last_index]["end"]
+
+            #     print("[SubStampToSubtitleTranslation] : Processing Sentence : {}".format(sentence))
+            #     print("[SubStampToSubtitleTranslation] : Rebuild Words       : {}".format(match_anchor))
+            #     print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(matched_st))
+                
+            #     # 将以下三个操作 合并为一个操作 原子性操作
+            #     self.memo.obj_update("TaskData", "subtitle_match").append({
+            #         "text": sentence,
+            #         "start": start_time,
+            #         "end": end_time
+            #     })
+            #     self.memo.update("TaskData", "word_timestamp", 
+            #                      self.memo("TaskData", "word_timestamp")[last_index+1:])
+            #     self.memo.obj_update("TaskData", "sentences").pop(0)
+            #     self.memo.obj_update("TaskData", "match_anchor").pop(0)
+            #     self.memo.save()
             
             self.memo.update("TaskData", "paragraph_index", paragraph_index+1, not_save=True)
             self.memo.update("TaskData", "paragraph", "", not_save=True)
