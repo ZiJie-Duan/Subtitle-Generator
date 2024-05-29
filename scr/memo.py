@@ -24,17 +24,18 @@ class Memo:
     def __call__(self, section: str, key: str):
         return self.data[section][key]
     
-    def update(self, section: str, key: str, value, not_save=False):
+    def update(self, section: str, key: str, value, save=False):
         self.data[section][key] = value
-        if not not_save:
+        if save:
             self.save()
     
     def obj_update(self, section: str, key: str):
         return self.data[section][key]
 
-    def add_section(self, section: str):
+    def add_section(self, section: str, save=False):
         self.data[section] = {}
-        self.save()
+        if save:
+            self.save()
 
     def clean(self):
         os.remove(self.file_path())

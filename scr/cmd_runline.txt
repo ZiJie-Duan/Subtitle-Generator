@@ -1,0 +1,5 @@
+cmd_runline
+
+For test
+cd C:\Users\lucyc\Videos\Captures
+python "C:\Users\lucyc\Desktop\Subtitle-Generator\scr\main.py" 
