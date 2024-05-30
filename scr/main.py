@@ -21,6 +21,9 @@ class SubtitleGenerator:
         self.gpt = gpt
         self.wis = wis
         self.memo = memo
+    
+    def task_duplication_check(self):
+        self.input_file = None
 
     def say_hello(self):
         print("\n  SubtitleGenerator v1.1.0  \n")
@@ -218,9 +221,21 @@ Enjoy creating subtitles with ease!
             return
 
 
-cfg = DockerConfig() # general config
-gpt = GPTApi(cfg("OPENAI_API_KEY_PETER"))
-wis = WisperApi(cfg("OPENAI_API_KEY_PETER"))
-memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
-sg = SubtitleGenerator(cfg, gpt, wis, memo)
-sg.run()
+if __name__ == "__main__":
+
+    try:
+        cfg = DockerConfig() # general config
+        gpt = GPTApi(cfg("OPENAI_API_KEY_PETER"))
+        wis = WisperApi(cfg("OPENAI_API_KEY_PETER"))
+        memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
+        sg = SubtitleGenerator(cfg, gpt, wis, memo)
+        sg.run()
+        
+    except Exception as e:
+        print("[SubtitleGenerator] : Panic!")
+        print("[SubtitleGenerator] : Serious Error Occurred.")
+        print("[SubtitleGenerator] : Error Message : {}".format(str(e)))
+        print("[SubtitleGenerator] : Please contact the author.")
+        print("[SubtitleGenerator] : Type Enter to Exit.")
+        input()
+        exit()

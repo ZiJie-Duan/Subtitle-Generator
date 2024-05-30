@@ -138,7 +138,7 @@ class AudioToSubtitleTimestamp:
         self.memo.clean()
 
     def save(self):
-        file_path = self.media.infile.nfile(ext="json")
+        file_path = self.media.infile.nfile(ext = "json")
         with open(file_path(), "w") as f:
             json.dump(self.memo("TaskData", "subtitle_timestamp"), f)
 
@@ -472,7 +472,7 @@ def sliding_matching(words_data, sentences):
         print("Matched : ", "".join(words[min_location:min_location+len(sentence)]))
 
         if words_data[words_map[min_location]]["end"] - words_data[words_map[min_location]]["start"] > 2:
-            start_time = words_data[words_map[min_location]]["end"] - 1.5
+            start_time = words_data[words_map[min_location]]["end"] - 1.2
         else:
             start_time = words_data[words_map[min_location]]["start"]
         time_map.append(
