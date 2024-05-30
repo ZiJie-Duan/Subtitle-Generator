@@ -325,6 +325,7 @@ class SubStampToSubtitleOriginal:
                 self.memo.obj_update("TaskData", "sentences").pop(0)
                 self.memo.save()
             
+            # print("debug : add pindex ") Becareful, why paragraph_index not correct
             self.memo.update("TaskData", "paragraph_index", paragraph_index+1)
             self.memo.update("TaskData", "paragraph", "")
             self.memo.update("TaskData", "sentences", [])

@@ -102,7 +102,7 @@ Enjoy creating subtitles with ease!
                 print("[SubtitleGenerator] : Make sure the 'Task_File' is exist.")
                 print("[SubtitleGenerator] : Type Enter to Exit And Try Again.")
                 input()
-                return
+                return 1
             
             print("[Hint] : Why you see this message?")
             print("[Hint] : This message means the you have a task not finish in the last time.")
@@ -116,7 +116,7 @@ Enjoy creating subtitles with ease!
                 print("[SubtitleGenerator] : Task Removed.")
                 print("[SubtitleGenerator] : Type Enter to Exit And Drop File Again.")
                 input()
-                return
+                return 1
 
             if self.memo("TaskInfo", "Task_Type") == "toSubtitleTimestampFile":
                 media = Media(FilePath(self.memo("TaskInfo", "Task_File")), SystemCmd())
@@ -151,7 +151,7 @@ Enjoy creating subtitles with ease!
             self.print_info()
             print("[SubtitleGenerator] : Type Enter to Exit And Drop File Again.")
             input()
-            return
+            return 1
         
         if self.input_file.file_ext in ["mp4", "avi", "mkv", "flv", "mov", "wmv", "mp3", "wav"]:
             # Task 1: Transfer audio to subtitle
@@ -165,7 +165,7 @@ Enjoy creating subtitles with ease!
                 print("[SubtitleGenerator] : Task Canceled.")
                 print("[SubtitleGenerator] : Type Enter to Exit")
                 input()
-                return
+                return 1
 
             media = Media(self.input_file, SystemCmd())
             task = AudioToSubtitleTimestamp(self.cfg, self.gpt, self.wis, self.memo, media)
@@ -218,7 +218,7 @@ Enjoy creating subtitles with ease!
             print("[SubtitleGenerator] : Your file type : {}".format(self.input_file.file_ext))
             print("[SubtitleGenerator] : Type Enter to Exit And Try Again.")
             input()
-            return
+            return 1
 
 
 if __name__ == "__main__":
@@ -229,7 +229,12 @@ if __name__ == "__main__":
         wis = WisperApi(cfg("OPENAI_API_KEY_PETER"))
         memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
         sg = SubtitleGenerator(cfg, gpt, wis, memo)
-        sg.run()
+        status = sg.run()
+
+        if not status:
+            print("[SubtitleGenerator] : Task Finished.")
+            print("[SubtitleGenerator] : Type Enter to Exit.")
+            input()
         
     except Exception as e:
         print("[SubtitleGenerator] : Panic!")
@@ -238,4 +243,3 @@ if __name__ == "__main__":
         print("[SubtitleGenerator] : Please contact the author.")
         print("[SubtitleGenerator] : Type Enter to Exit.")
         input()
-        exit()
