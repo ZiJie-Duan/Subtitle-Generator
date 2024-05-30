@@ -26,11 +26,11 @@ class SubtitleGenerator:
         self.input_file = None
 
     def say_hello(self):
-        print("\n  SubtitleGenerator v1.1.0  \n")
+        print("\n  SubtitleGenerator v1.1.1  \n")
     
     def print_info(self):
 
-        program_name = "SubtitleGenerator v1.1.0"
+        program_name = "SubtitleGenerator v1.1.1"
         author = "Zijie Duan"
         description = \
 """Welcome to {program_name}
