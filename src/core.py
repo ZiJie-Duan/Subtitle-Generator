@@ -474,10 +474,10 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "system", "content": prompt_translation},
                 {"role": "user", "content": usermsg}
             ]
-            print("DEBUG stc: ", message)
+            #print("DEBUG stc: ", message)
             response = gpt.query(message, max_tokens=4000, temperature=1, model="gpt-4o", timeout=60)
             sentences = response[4:-4]
-            print("DEBUG stc: ", sentences)
+            #print("DEBUG stc: ", sentences)
 
             usermsg = "<<<{}>>>".format(sentences)
             message = [
@@ -487,7 +487,7 @@ Please do not provide any explanations and do not answer any questions.
             #"gpt-4o"
             response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
             sentences = response[4:-4].split("\n---\n")
-            print("DEBUG stc2: ", sentences)
+            #print("DEBUG stc2: ", sentences)
 
             usermsg = "<<<{}>>> \n((({})))".format("|".join(sentences), text)
             message = [
@@ -496,7 +496,7 @@ Please do not provide any explanations and do not answer any questions.
             ]
             response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
             sentences = response[4:-4].split("\n---\n")
-            print("DEBUG stc3: ", sentences)
+            #print("DEBUG stc3: ", sentences)
             sentences = [x.split("\n-\n") for x in sentences]
             translation = [x[0] for x in sentences]
             match_only = [x[1] for x in sentences]
