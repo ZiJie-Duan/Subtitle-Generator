@@ -20,6 +20,87 @@ TaskInfo = {
 在Section "TaskData" 中定义 其他的客制化数据
 '''
 
+def proportional_merge(combination, comb_time_map):
+    sentences = []
+    time_map = []
+
+    comb_start = min([x[0] for x in comb_time_map])
+    comb_end = max([x[1] for x in comb_time_map])
+    max_length = len("".join(combination))
+    comb_time_diff = comb_end - comb_start
+
+    for index, sentence in enumerate(combination):
+        duration = \
+            (len(sentence) / max_length)*comb_time_diff
+        
+        sentences.append(sentence)
+
+        if index == 0:
+            time_map.append((
+                comb_start,
+                comb_start + duration))
+        else:
+            time_map.append((
+                time_map[-1][1],
+                time_map[-1][1] + duration))
+    
+    return sentences, time_map
+
+def subtitle_proportional_merge(sentences, time_map):
+
+    sentences.append("END_OF_SUBTITLE")
+    time_map.append((float('inf'), float('inf')))
+    
+    n_sentences = []
+    n_time_map = []
+
+    combination = []
+    comb_time_map = []
+    cbst = time_map[0][0]
+    cben = time_map[0][1]
+
+    is_comb = False
+
+    for i in range(1, len(sentences)):
+
+        if cbst > time_map[i][0] or cbst > time_map[i][1] or \
+            cben > time_map[i][0] or cben > time_map[i][1]:
+            combination.append(sentences[i-1])
+            comb_time_map.append(time_map[i-1])
+            cbst = min(cbst, time_map[i][0])
+            cben = max(cben, time_map[i][1])
+            is_comb = True
+
+        else:
+            if not is_comb:
+                n_sentences.append(sentences[i-1])
+                n_time_map.append(time_map[i-1])
+                cbst = time_map[i][0]
+                cben = time_map[i][1]
+
+            else:
+                combination.append(sentences[i-1])
+                comb_time_map.append(time_map[i-1])
+                
+                s, t = proportional_merge(combination, comb_time_map)
+                n_sentences += s
+                n_time_map += t
+
+                cbst = time_map[i][0]
+                cben = time_map[i][1]
+                combination = []
+                comb_time_map = []
+                is_comb = False
+    
+    for i in range(1,len(n_sentences)):
+        if n_time_map[i-1][1] > n_time_map[i][0]:
+            print("ERROR: Overlapping subtitles.")
+            print("time {}, Subtitle 1: {}".format(n_time_map[i-1], n_sentences[i-1]))
+            print("time {}, Subtitle 2: {}".format(n_time_map[i], n_sentences[i]))
+
+    return n_sentences, n_time_map
+
+
 def levenshtein_distance(s1, s2):
     if len(s1) < len(s2):
         return levenshtein_distance(s2, s1)
@@ -353,7 +434,7 @@ Present in the following format:
 ---
 example translated paragraph
 ---
-""".format(language, language)
+""".format(language)
 
     prompt_split = """
 You are a subtitle segmenter. Your task is to segment the text enclosed in <<<>>> symbols into short sections based on semantics and pauses, with each section not exceeding 12 words and containing no punctuation. Each segmented subtitle should be presented in the following format:
@@ -393,27 +474,29 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "system", "content": prompt_translation},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0.2, model="gpt-4o", timeout=120)
+            print("DEBUG stc: ", message)
+            response = gpt.query(message, max_tokens=4000, temperature=1, model="gpt-4o", timeout=60)
             sentences = response[4:-4]
-            #print("DEBUG stc: ", sentences)
+            print("DEBUG stc: ", sentences)
 
             usermsg = "<<<{}>>>".format(sentences)
             message = [
                 {"role": "system", "content": prompt_split},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=120)
+            #"gpt-4o"
+            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
             sentences = response[4:-4].split("\n---\n")
-            #print("DEBUG stc: ", sentences)
+            print("DEBUG stc2: ", sentences)
 
             usermsg = "<<<{}>>> \n((({})))".format("|".join(sentences), text)
             message = [
                 {"role": "system", "content": prompt_match},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=120)
+            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
             sentences = response[4:-4].split("\n---\n")
-            #print("DEBUG stc: ", sentences)
+            print("DEBUG stc3: ", sentences)
             sentences = [x.split("\n-\n") for x in sentences]
             translation = [x[0] for x in sentences]
             match_only = [x[1] for x in sentences]
@@ -583,6 +666,8 @@ class SubStampToSubtitleTranslation:
             word_list = self.memo("TaskData", "word_timestamp")
                 
             time_map = sliding_matching(word_list, match_anchor)
+
+            sentence, time_map = subtitle_proportional_merge(sentence, time_map)
             
             for i in range(len(sentence)):
                 start_time = time_map[i][0]
@@ -594,45 +679,6 @@ class SubStampToSubtitleTranslation:
                     "start": start_time,
                     "end": end_time
                 })
-            # ------------- NEW ALG ----------------
-
-            # while True:
-            #     if self.memo("TaskData", "sentences") == []:
-            #         break
-                
-            #     sentence = self.memo("TaskData", "sentences")[0]
-            #     match_anchor = self.memo("TaskData", "match_anchor")[0]
-
-            #     word_list = self.memo("TaskData", "word_timestamp")[:]
-
-            #     if len(word_list) == 0:
-            #         print(word_list)
-            #         print(sentence)
-            #         print(self.memo("TaskData", "sentences"))
-            #         print("[SubStampToSubtitleTranslation] : Error, Segmentation misplacement leads to an empty list.")
-            #         print("[SubStampToSubtitleTranslation] : This error will cause partial misalignment of subtitles and some subtitles not to display, but it will not affect subsequent subtitles. The next version will fix this issue.")
-            #         break
-                    
-            #     last_index, matched_st = match_sentence(match_anchor, [x["word"] for x in word_list])
-                
-            #     start_time = word_list[0]["start"]
-            #     end_time = word_list[last_index]["end"]
-
-            #     print("[SubStampToSubtitleTranslation] : Processing Sentence : {}".format(sentence))
-            #     print("[SubStampToSubtitleTranslation] : Rebuild Words       : {}".format(match_anchor))
-            #     print("[SubStampToSubtitleTranslation] : Matched Words       : {}".format(matched_st))
-                
-            #     # 将以下三个操作 合并为一个操作 原子性操作
-            #     self.memo.obj_update("TaskData", "subtitle_match").append({
-            #         "text": sentence,
-            #         "start": start_time,
-            #         "end": end_time
-            #     })
-            #     self.memo.update("TaskData", "word_timestamp", 
-            #                      self.memo("TaskData", "word_timestamp")[last_index+1:])
-            #     self.memo.obj_update("TaskData", "sentences").pop(0)
-            #     self.memo.obj_update("TaskData", "match_anchor").pop(0)
-            #     self.memo.save()
             
             self.memo.update("TaskData", "paragraph_index", paragraph_index+1)
             self.memo.update("TaskData", "paragraph", "")
