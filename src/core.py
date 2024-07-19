@@ -243,17 +243,17 @@ Maintain the natural flow of the dialogue and ensure each segment can independen
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o")
+            response = gpt.query(message, max_tokens=4000, temperature=0.1, model="gpt-4o-mini")
             sentences = response[4:-4].split("\n---\n")
             success = True
             break
         except:
-            print("[gpt_split_sentence]: GPT-4o Invalid Response.")
+            print("[gpt_split_sentence]: gpt-4o-mini Invalid Response.")
             print("[gpt_split_sentence]: Retry {} times.".format(i+1))
             continue
     
     if not success:
-        print("[gpt_split_sentence]: GPT-4o Invalid Response.")
+        print("[gpt_split_sentence]: gpt-4o-mini Invalid Response.")
         print("[gpt_split_sentence]: Please Check Your Network.")
         print("[gpt_split_sentence]: Exit.")
         input("Press Enter to Exit...")
@@ -475,7 +475,7 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "user", "content": usermsg}
             ]
             #print("DEBUG stc: ", message)
-            response = gpt.query(message, max_tokens=4000, temperature=1, model="gpt-4o", timeout=60)
+            response = gpt.query(message, max_tokens=4000, temperature=1, model="gpt-4o-mini", timeout=60)
             sentences = response[4:-4]
             #print("DEBUG stc: ", sentences)
 
@@ -484,8 +484,8 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "system", "content": prompt_split},
                 {"role": "user", "content": usermsg}
             ]
-            #"gpt-4o"
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
+            #"gpt-4o-mini"
+            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o-mini", timeout=60)
             sentences = response[4:-4].split("\n---\n")
             #print("DEBUG stc2: ", sentences)
 
@@ -494,7 +494,7 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "system", "content": prompt_match},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o", timeout=60)
+            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o-mini", timeout=60)
             sentences = response[4:-4].split("\n---\n")
             #print("DEBUG stc3: ", sentences)
             sentences = [x.split("\n-\n") for x in sentences]
@@ -504,13 +504,13 @@ Please do not provide any explanations and do not answer any questions.
             success = True
             break
         except Exception as e:
-            print("[gpt_split_sentence_translation]: GPT-4o Invalid Response.")
+            print("[gpt_split_sentence_translation]: gpt-4o-mini Invalid Response.")
             print("[gpt_split_sentence_translation]: Retry {} times.".format(i+1))
             print("[gpt_split_sentence_translation]: Error : {}".format(str(e)))
             continue
     
     if not success:
-        print("[gpt_split_sentence_translation]: GPT-4o Invalid Response.")
+        print("[gpt_split_sentence_translation]: gpt-4o-mini Invalid Response.")
         print("[gpt_split_sentence_translation]: Please Check Your Network.")
         print("[gpt_split_sentence_translation]: Exit.")
         input("Press Enter to Exit...")
