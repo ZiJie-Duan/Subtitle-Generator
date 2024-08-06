@@ -6,6 +6,7 @@ import json
 import time
 import math
 import asyncio
+import random
 
 '''
 通用任务数据定义（每一个任务都会基于一个文件进行操作）：
@@ -19,6 +20,7 @@ TaskInfo = {
 }
 在Section "TaskData" 中定义 其他的客制化数据
 '''
+
 
 def proportional_merge(combination, comb_time_map):
     sentences = []
@@ -425,6 +427,25 @@ class SubStampToSubtitleOriginal:
         self.subwriter.close()
 
 
+def try_to_query_gpt(gpt, fail, message, max_tokens, temperature, timeout):
+
+    if fail < 3:
+        temperature = random.uniform(temperature-0.1, temperature+0.1)
+        temperature = max(0, temperature)
+    else:
+        temperature = 0
+
+    if fail < 2:
+        model = "gpt-4o-mini"
+    elif fail < 4:
+        model = "gpt-4o"
+    else:
+        model = "gpt-4"
+
+    response = gpt.query(message, max_tokens=max_tokens, temperature=temperature, model=model, timeout=timeout)
+    return response
+
+
 
 def gpt_split_sentence_translation(gpt: GPTApi, text: str, language: str):
 
@@ -475,7 +496,7 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "user", "content": usermsg}
             ]
             #print("DEBUG stc: ", message)
-            response = gpt.query(message, max_tokens=4000, temperature=1, model="gpt-4o-mini", timeout=60)
+            response = try_to_query_gpt(gpt, i, message, max_tokens=4000, temperature=1, timeout=60)
             sentences = response[4:-4]
             #print("DEBUG stc: ", sentences)
 
@@ -485,7 +506,7 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "user", "content": usermsg}
             ]
             #"gpt-4o-mini"
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o-mini", timeout=60)
+            response = try_to_query_gpt(gpt, i, message, max_tokens=4000, temperature=0.1, timeout=60)
             sentences = response[4:-4].split("\n---\n")
             #print("DEBUG stc2: ", sentences)
 
@@ -494,7 +515,7 @@ Please do not provide any explanations and do not answer any questions.
                 {"role": "system", "content": prompt_match},
                 {"role": "user", "content": usermsg}
             ]
-            response = gpt.query(message, max_tokens=4000, temperature=0, model="gpt-4o-mini", timeout=60)
+            response = try_to_query_gpt(gpt, i, message, max_tokens=4000, temperature=0.1, timeout=60)
             sentences = response[4:-4].split("\n---\n")
             #print("DEBUG stc3: ", sentences)
             sentences = [x.split("\n-\n") for x in sentences]
@@ -504,13 +525,13 @@ Please do not provide any explanations and do not answer any questions.
             success = True
             break
         except Exception as e:
-            print("[gpt_split_sentence_translation]: gpt-4o-mini Invalid Response.")
+            print("[gpt_split_sentence_translation]: gpt Invalid Response.")
             print("[gpt_split_sentence_translation]: Retry {} times.".format(i+1))
             print("[gpt_split_sentence_translation]: Error : {}".format(str(e)))
             continue
     
     if not success:
-        print("[gpt_split_sentence_translation]: gpt-4o-mini Invalid Response.")
+        print("[gpt_split_sentence_translation]: gpt Invalid Response.")
         print("[gpt_split_sentence_translation]: Please Check Your Network.")
         print("[gpt_split_sentence_translation]: Exit.")
         input("Press Enter to Exit...")
@@ -538,7 +559,7 @@ def sliding_matching(words_data, sentences):
     
 
     for sentence in sentences:
-        min_distance = 9999999
+        min_distance = 999999999
         min_location = 0
 
         for i in range(0, len(words)-len(sentence)+1):
@@ -551,20 +572,35 @@ def sliding_matching(words_data, sentences):
                 min_distance = distance
                 min_location = i
 
-        location += len(sentence)
-        print("\nsentence: ", sentence)
-        print("Matched : ", "".join(words[min_location:min_location+len(sentence)]))
+        if min_distance == 999999999:
+            print("\n[sliding_matching] : No Matched Sentence.")
+            print("[sliding_matching] : ERROR : words    : ", "".join(words))
+            print("[sliding_matching] : ERROR : sentence : ", sentence)
+            print("")
+            try:
+                time_map.append(time_map[-1])
+                print("[sliding_matching] : ERROR SOlVED : Use Last Time Map.")
+            except:
+                print("[sliding_matching] : ERROR SOlVED : Skip Sentence.")
+                return [], False
 
-        if words_data[words_map[min_location]]["end"] - words_data[words_map[min_location]]["start"] > 2:
-            start_time = words_data[words_map[min_location]]["end"] - 1.2
         else:
-            start_time = words_data[words_map[min_location]]["start"]
-        time_map.append(
-            (start_time,
-             words_data[words_map[min_location + len(sentence)-1]]["end"])
-        )
-    
-    return time_map
+            location += len(sentence)
+            print("\nsentence: ", sentence)
+            print("Matched : ", "".join(words[min_location:min_location+len(sentence)]))
+
+            # if len(words_map) > min_location or len(words_map) > (min_location + len(sentence)-1):
+            if words_data[words_map[min_location]]["end"] - words_data[words_map[min_location]]["start"] > 2:
+                start_time = words_data[words_map[min_location]]["end"] - 1.2
+            else:
+                start_time = words_data[words_map[min_location]]["start"]
+            time_map.append(
+                (start_time,
+                words_data[words_map[min_location + len(sentence)-1]]["end"])
+            )
+        
+    return time_map, True
+
 
 class SubStampToSubtitleTranslation:
     """
@@ -654,7 +690,6 @@ class SubStampToSubtitleTranslation:
                 self.memo.update("TaskData", "sentences", sentence)
                 self.memo.update("TaskData", "match_anchor", match_anchor, True)
 
-
             # new alg to match sentence
             # ------------- NEW ALG ----------------
             if self.memo("TaskData", "sentences") == []:
@@ -665,20 +700,27 @@ class SubStampToSubtitleTranslation:
 
             word_list = self.memo("TaskData", "word_timestamp")
                 
-            time_map = sliding_matching(word_list, match_anchor)
+            time_map, status = sliding_matching(word_list, match_anchor)
 
-            sentence, time_map = subtitle_proportional_merge(sentence, time_map)
-            
-            for i in range(len(sentence)):
-                start_time = time_map[i][0]
-                end_time = time_map[i][1]
+            if status:
+                # sliding_matching will return false if no match
+                # if success, then do the following
+
+                sentence, time_map = subtitle_proportional_merge(sentence, time_map)
                 
-                # 将以下三个操作 合并为一个操作 原子性操作
-                self.memo.obj_update("TaskData", "subtitle_match").append({
-                    "text": sentence[i],
-                    "start": start_time,
-                    "end": end_time
-                })
+                for i in range(len(sentence)):
+                    start_time = time_map[i][0]
+                    end_time = time_map[i][1]
+                    
+                    # 将以下三个操作 合并为一个操作 原子性操作
+                    self.memo.obj_update("TaskData", "subtitle_match").append({
+                        "text": sentence[i],
+                        "start": start_time,
+                        "end": end_time
+                    })
+            else:
+                print("[SubStampToSubtitleTranslation] : ERROR HANDLING : Skip Sentence.")
+                print("[SubStampToSubtitleTranslation] : DEBUG PARAGRAPH : ",str(self.memo("TaskData", "paragraph")))
             
             self.memo.update("TaskData", "paragraph_index", paragraph_index+1)
             self.memo.update("TaskData", "paragraph", "")
