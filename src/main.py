@@ -10,7 +10,6 @@ import os
 class SubtitleGenerator:
 
     def __init__(self, cfg: DockerConfig, gpt: GPTApi, wis: WisperApi, memo: Memo):
-        # 启动传入的参数
         self.start_args = os.sys.argv[1:]
         if len(self.start_args) < 1:
             self.input_file = None
@@ -26,11 +25,11 @@ class SubtitleGenerator:
         self.input_file = None
 
     def say_hello(self):
-        print("\n  SubtitleGenerator v1.2.1-alpha  \n")
+        print("\n  SubtitleGenerator v1.3.0-alpha  \n")
     
     def print_info(self):
 
-        program_name = "SubtitleGenerator v1.2.1-alpha"
+        program_name = "SubtitleGenerator v1.3.0-alpha"
         author = "Zijie Duan"
         description = \
 """Welcome to {program_name}
@@ -240,13 +239,18 @@ def init_args(cfg: DockerConfig):
 
 
 if __name__ == "__main__":
-
     try:
+        # set the current directory to the exe directory
+        # so we can save config file and safety file in the same directory
+        exe_path = os.path.abspath(os.sys.argv[0])
+        exe_directory = os.path.dirname(exe_path)
+        os.chdir(exe_directory)
+
         cfg = DockerConfig() # general config
         init_args(cfg)
         gpt = GPTApi(cfg("OPENAI_API_KEY"))
         wis = WisperApi(cfg("OPENAI_API_KEY"))
-        memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
+        memo = Memo(FilePath("secure_save.json", True))
         sg = SubtitleGenerator(cfg, gpt, wis, memo)
         status = sg.run()
 

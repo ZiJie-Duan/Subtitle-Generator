@@ -111,9 +111,7 @@ class DockerConfig(Config):
     def is_exist(self, section):
         try:
             self.__call__(section)
-            print(f'{section} found in env or config file')
             return True
         except KeyError:
-            print(f'Error: {section} not found in env or config file')
             return False
 
