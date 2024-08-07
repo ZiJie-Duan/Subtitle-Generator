@@ -26,11 +26,11 @@ class SubtitleGenerator:
         self.input_file = None
 
     def say_hello(self):
-        print("\n  SubtitleGenerator v1.1.1  \n")
+        print("\n  SubtitleGenerator v1.2.1-alpha  \n")
     
     def print_info(self):
 
-        program_name = "SubtitleGenerator v1.1.1"
+        program_name = "SubtitleGenerator v1.2.1-alpha"
         author = "Zijie Duan"
         description = \
 """Welcome to {program_name}
@@ -221,12 +221,31 @@ Enjoy creating subtitles with ease!
             return 1
 
 
+def init_args(cfg: DockerConfig):
+
+    continue_check = True
+    while continue_check:
+        cfg.read()
+        
+        if not cfg.is_exist("OPENAI_API_KEY"):
+            print("[init_args] : Please input your OpenAI API Key.")
+            api_key = input("[init_args] : OpenAI API Key >>")
+            cfg.set("OPENAI", "api_key", api_key)
+            print("[init_args] : Set OpenAI API Key.")
+            #print("[init_args] : OpenAI Key : {}".format(cfg("OPENAI_API_KEY")))
+            continue_check = True
+            continue
+
+        continue_check = False
+
+
 if __name__ == "__main__":
 
     try:
         cfg = DockerConfig() # general config
-        gpt = GPTApi(cfg("OPENAI_API_KEY_PETER"))
-        wis = WisperApi(cfg("OPENAI_API_KEY_PETER"))
+        init_args(cfg)
+        gpt = GPTApi(cfg("OPENAI_API_KEY"))
+        wis = WisperApi(cfg("OPENAI_API_KEY"))
         memo = Memo(FilePath("secure_save.json", True)) # 拖动问题bug
         sg = SubtitleGenerator(cfg, gpt, wis, memo)
         status = sg.run()
@@ -239,7 +258,20 @@ if __name__ == "__main__":
     except Exception as e:
         print("[SubtitleGenerator] : Panic!")
         print("[SubtitleGenerator] : Serious Error Occurred.")
-        print("[SubtitleGenerator] : Error Message : {}".format(str(e)))
+        print("[SubtitleGenerator] : Error Message : {}\n".format(str(e)))
+        print("[SubtitleGenerator] : This Error is not expected.")
         print("[SubtitleGenerator] : Please contact the author.")
+        print("[SubtitleGenerator] : Do You Want to Remove All Memory Files?")
+        uin = input("[SubtitleGenerator] : [Y/N] >>")
+        if uin == "Y" or uin == "y":
+            print("[SubtitleGenerator] : WARNING! : This operation will remove all config files and memory files.")
+            uin = input("[SubtitleGenerator] : Are You Sure? [Y/N] >>")
+            if uin == "Y" or uin == "y":
+                memo.clean()
+                print("[SubtitleGenerator] : Memory Files Removed.")
+                cfg.clear()
+                print("[SubtitleGenerator] : Config Files Removed.")
+            else:
+                print("[SubtitleGenerator] : Operation Canceled.")
         print("[SubtitleGenerator] : Type Enter to Exit.")
         input()
