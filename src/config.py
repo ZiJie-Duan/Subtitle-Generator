@@ -60,6 +60,10 @@ class Config:
     def save(self):
         with open(self.path, 'w') as configfile:
             self.config.write(configfile)
+    
+    def clear(self):
+        # remove the file
+        os.remove(self.path)
 
 
 class DockerConfig(Config):
@@ -93,12 +97,21 @@ class DockerConfig(Config):
         # 如果环境变量中不存在, 且本地配置文件中也不存在，则抛出异常
         raise KeyError(f'Error: {section} not found in env or config file')
     
-    def read(self, path):
+    def read(self, path='config.ini'):
 
         if not os.path.exists(path):
             self.local_config_exist = False
             #print(f'本地配置文件不存在: {path}')
         else:
+            self.local_config_exist = True
             self.config.read(path, encoding='utf-8')
             #print(f'读取本地配置文件: {path}')
+    
+    
+    def is_exist(self, section):
+        try:
+            self.__call__(section)
+            return True
+        except KeyError:
+            return False
 
