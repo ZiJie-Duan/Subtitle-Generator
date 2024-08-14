@@ -1,10 +1,11 @@
 
 # Subtitle Generator
 
-![License](https://img.shields.io/badge/license-MIT-blue)![Version](https://img.shields.io/badge/versions-v1.3.0-alpha-orange)
-[Windows-image]: <https://img.shields.io/badge/-Windows-blue?logo=windows>
-[MacOS-image]: <https://img.shields.io/badge/-MacOS-black?logo=apple>
-[Linux-image]: <https://img.shields.io/badge/-Linux-333?logo=ubuntu>
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Version](https://img.shields.io/badge/versions-v1.3.0-alpha-orange)
+![Windows](https://img.shields.io/badge/-Windows-blue?logo=windows)
+![MacOS](https://img.shields.io/badge/-MacOS-black?logo=apple)
+![Linux](https://img.shields.io/badge/-Linux-333?logo=ubuntu)
 
 ![image](logo.jpg)
 
