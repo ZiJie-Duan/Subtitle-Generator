@@ -3,36 +3,39 @@ from config import DockerConfig
 from media import Media
 from openai_api import GPTApi, WisperApi
 from memo import Memo
-from core import AudioToSubtitleTimestamp, SubStampToSubtitleOriginal, SubStampToSubtitleTranslation
+from core import (
+    AudioToSubtitleTimestamp,
+    SubStampToSubtitleOriginal,
+    SubStampToSubtitleTranslation,
+)
 from subtitle import SubtitleWriter
 import os
+import sys
+
 
 class SubtitleGenerator:
-
     def __init__(self, cfg: DockerConfig, gpt: GPTApi, wis: WisperApi, memo: Memo):
-        self.start_args = os.sys.argv[1:]
+        self.start_args = sys.argv[1:]
         if len(self.start_args) < 1:
             self.input_file = None
         else:
-            self.input_file = FilePath(self.start_args[0]) # we only need the first arg
+            self.input_file = FilePath(self.start_args[0])  # we only need the first arg
 
         self.cfg = cfg
         self.gpt = gpt
         self.wis = wis
         self.memo = memo
-    
+
     def task_duplication_check(self):
         self.input_file = None
 
     def say_hello(self):
         print("\n  SubtitleGenerator v1.3.0-alpha  \n")
-    
-    def print_info(self):
 
+    def print_info(self):
         program_name = "SubtitleGenerator v1.3.0-alpha"
         author = "Zijie Duan"
-        description = \
-"""Welcome to {program_name}
+        description = """Welcome to {program_name}
 ===================================
 
 Author: {author}
@@ -69,7 +72,7 @@ Enjoy creating subtitles with ease!
 """.format(program_name=program_name, author=author)
 
         print(description)
-    
+
     def get_confumation(self, message: str):
         while True:
             choice = input("[SubtitleGenerator] : {}? [Y/N] >>".format(message))
@@ -92,7 +95,11 @@ Enjoy creating subtitles with ease!
             print("    | Task_Name : {}".format(self.memo("TaskInfo", "Task_Name")))
             print("    | Task_Date : {}".format(self.memo("TaskInfo", "Task_Date")))
             print("    | Task_File : {}".format(self.memo("TaskInfo", "Task_File")))
-            print("    | Task_Progress : {}%\n".format(str(self.memo("TaskInfo", "Task_Progress"))))
+            print(
+                "    | Task_Progress : {}%\n".format(
+                    str(self.memo("TaskInfo", "Task_Progress"))
+                )
+            )
 
             if FilePath(self.memo("TaskInfo", "Task_File")).exist():
                 print("[SubtitleGenerator] : Task File Exist.")
@@ -102,9 +109,11 @@ Enjoy creating subtitles with ease!
                 print("[SubtitleGenerator] : Type Enter to Exit And Try Again.")
                 input()
                 return 1
-            
+
             print("[Hint] : Why you see this message?")
-            print("[Hint] : This message means the you have a task not finish in the last time.")
+            print(
+                "[Hint] : This message means the you have a task not finish in the last time."
+            )
             print("[Hint] : You can choose to continue this task or start a new task.")
             print("[Warning] : If you start a new task, the last task will be lost.")
 
@@ -119,24 +128,40 @@ Enjoy creating subtitles with ease!
 
             if self.memo("TaskInfo", "Task_Type") == "toSubtitleTimestampFile":
                 media = Media(FilePath(self.memo("TaskInfo", "Task_File")), SystemCmd())
-                task = AudioToSubtitleTimestamp(self.cfg, self.gpt, self.wis, self.memo, media)
+                task = AudioToSubtitleTimestamp(
+                    self.cfg, self.gpt, self.wis, self.memo, media
+                )
                 task.continue_task()
                 task.run()
                 return
-            
+
             elif self.memo("TaskInfo", "Task_Type") == "toSubtitleOriginal":
                 timestamp_file = FilePath(self.memo("TaskInfo", "Task_File"))
-                subwriter = SubtitleWriter(FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt"))
-                task = SubStampToSubtitleOriginal(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
+                subwriter = SubtitleWriter(
+                    FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt")
+                )
+                task = SubStampToSubtitleOriginal(
+                    self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file
+                )
                 task.continue_task()
                 task.run()
                 return
 
             elif self.memo("TaskInfo", "Task_Type") == "toSubtitleTranslation":
                 timestamp_file = FilePath(self.memo("TaskInfo", "Task_File"))
-                subwriter = SubtitleWriter(FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt"))
+                subwriter = SubtitleWriter(
+                    FilePath(self.memo("TaskInfo", "Task_File")).nfile(ext="srt")
+                )
                 language = self.memo("TaskInfo", "Task_Language")
-                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file, language)
+                task = SubStampToSubtitleTranslation(
+                    self.cfg,
+                    self.gpt,
+                    self.wis,
+                    self.memo,
+                    subwriter,
+                    timestamp_file,
+                    language,
+                )
                 task.continue_task()
                 task.run()
                 return
@@ -151,13 +176,25 @@ Enjoy creating subtitles with ease!
             print("[SubtitleGenerator] : Type Enter to Exit And Drop File Again.")
             input()
             return 1
-        
-        if self.input_file.file_ext in ["mp4", "avi", "mkv", "flv", "mov", "wmv", "mp3", "wav"]:
+
+        if self.input_file.file_ext in [
+            "mp4",
+            "m4a",
+            "avi",
+            "mkv",
+            "flv",
+            "mov",
+            "wmv",
+            "mp3",
+            "wav",
+        ]:
             # Task 1: Transfer audio to subtitle
             print("[SubtitleGenerator] : Transfer audio to Timestamp File.")
-            print("[Hint] : Timestamp File will be saved in the same folder as the media file.")
+            print(
+                "[Hint] : Timestamp File will be saved in the same folder as the media file."
+            )
             print("[Hint] : This task may take a few minutes, please wait patiently.")
-            
+
             if self.get_confumation("Start the task"):
                 print("[SubtitleGenerator] : Start the task.")
             else:
@@ -167,7 +204,9 @@ Enjoy creating subtitles with ease!
                 return 1
 
             media = Media(self.input_file, SystemCmd())
-            task = AudioToSubtitleTimestamp(self.cfg, self.gpt, self.wis, self.memo, media)
+            task = AudioToSubtitleTimestamp(
+                self.cfg, self.gpt, self.wis, self.memo, media
+            )
             task.init_task()
             task.run()
             return
@@ -175,63 +214,99 @@ Enjoy creating subtitles with ease!
         elif self.input_file.file_ext in ["json"]:
             # Task 2: Transfer timestamp to subtitle
             print("[SubtitleGenerator] : Transfer timestamp to subtitle.")
-            print("[SubtitleGenerator] : please choose the language you want to translate.")
+            print(
+                "[SubtitleGenerator] : please choose the language you want to translate."
+            )
             language = None
-            language_map = ["English", "Chinese", "Japanese", "Korean", "French", "German", "Spanish", "Italian", "Portuguese", "Russian"]
+            language_map = [
+                "English",
+                "Chinese",
+                "Japanese",
+                "Korean",
+                "French",
+                "German",
+                "Spanish",
+                "Italian",
+                "Portuguese",
+                "Russian",
+            ]
 
             while True:
                 print("[SubtitleGenerator] : Support Language :")
                 for i, language in enumerate(language_map):
-                    print("    | {} : {}".format(i+1, language))
+                    print("    | {} : {}".format(i + 1, language))
                 print("[SubtitleGenerator] : Please input the number of the language.")
-                print("[SubtitleGenerator] : Empty for Original.(Keep Original Language)")
+                print(
+                    "[SubtitleGenerator] : Empty for Original.(Keep Original Language)"
+                )
                 language = input("[SubtitleGenerator] : Number / [None] >>")
                 if language == "None" or language == "":
                     language = "None"
                     break
-                elif language.isdigit() and int(language) in range(1, len(language_map)+1):
-                    language = language_map[int(language)-1]
+                elif language.isdigit() and int(language) in range(
+                    1, len(language_map) + 1
+                ):
+                    language = language_map[int(language) - 1]
                     break
                 else:
-                    print("[SubtitleGenerator] : Please input the number of the language.")
-                    print("[SubtitleGenerator] : Or leave it empty to keep the original language.")
+                    print(
+                        "[SubtitleGenerator] : Please input the number of the language."
+                    )
+                    print(
+                        "[SubtitleGenerator] : Or leave it empty to keep the original language."
+                    )
 
             if language == "None":
                 timestamp_file = self.input_file
                 subwriter = SubtitleWriter(self.input_file.nfile(ext="srt"))
-                task = SubStampToSubtitleOriginal(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file)
+                task = SubStampToSubtitleOriginal(
+                    self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file
+                )
                 task.init_task()
                 task.run()
                 return
             else:
                 timestamp_file = self.input_file
                 subwriter = SubtitleWriter(self.input_file.nfile(ext="srt"))
-                task = SubStampToSubtitleTranslation(self.cfg, self.gpt, self.wis, self.memo, subwriter, timestamp_file, language)
+                task = SubStampToSubtitleTranslation(
+                    self.cfg,
+                    self.gpt,
+                    self.wis,
+                    self.memo,
+                    subwriter,
+                    timestamp_file,
+                    language,
+                )
                 task.init_task()
                 task.run()
                 return
-        
+
         else:
             print("[SubtitleGenerator] : Not support file type.")
-            print("[SubtitleGenerator] : Support file type : mp4, avi, mkv, flv, mov, wmv, mp3, wav, json")
-            print("[SubtitleGenerator] : Your file type : {}".format(self.input_file.file_ext))
+            print(
+                "[SubtitleGenerator] : Support file type : mp4, avi, mkv, flv, mov, wmv, mp3, wav, json"
+            )
+            print(
+                "[SubtitleGenerator] : Your file type : {}".format(
+                    self.input_file.file_ext
+                )
+            )
             print("[SubtitleGenerator] : Type Enter to Exit And Try Again.")
             input()
             return 1
 
 
 def init_args(cfg: DockerConfig):
-
     continue_check = True
     while continue_check:
         cfg.read()
-        
+
         if not cfg.is_exist("OPENAI_API_KEY"):
             print("[init_args] : Please input your OpenAI API Key.")
             api_key = input("[init_args] : OpenAI API Key >>")
             cfg.set("OPENAI", "api_key", api_key)
             print("[init_args] : Set OpenAI API Key.")
-            #print("[init_args] : OpenAI Key : {}".format(cfg("OPENAI_API_KEY")))
+            # print("[init_args] : OpenAI Key : {}".format(cfg("OPENAI_API_KEY")))
             continue_check = True
             continue
 
@@ -239,26 +314,26 @@ def init_args(cfg: DockerConfig):
 
 
 if __name__ == "__main__":
-    try:
-        # set the current directory to the exe directory
-        # so we can save config file and safety file in the same directory
-        exe_path = os.path.abspath(os.sys.argv[0])
-        exe_directory = os.path.dirname(exe_path)
-        os.chdir(exe_directory)
+    # try:
+    # set the current directory to the exe directory
+    # so we can save config file and safety file in the same directory
+    exe_path = os.path.abspath(sys.argv[0])
+    exe_directory = os.path.dirname(exe_path)
+    os.chdir(exe_directory)
 
-        cfg = DockerConfig() # general config
-        init_args(cfg)
-        gpt = GPTApi(cfg("OPENAI_API_KEY"))
-        wis = WisperApi(cfg("OPENAI_API_KEY"))
-        memo = Memo(FilePath("secure_save.json", True))
-        sg = SubtitleGenerator(cfg, gpt, wis, memo)
-        status = sg.run()
+    cfg = DockerConfig()  # general config
+    init_args(cfg)
+    gpt = GPTApi(cfg("OPENAI_API_KEY"))
+    wis = WisperApi(cfg("OPENAI_API_KEY"))
+    memo = Memo(FilePath("secure_save.json", True))
+    sg = SubtitleGenerator(cfg, gpt, wis, memo)
+    status = sg.run()
 
-        if not status:
-            print("[SubtitleGenerator] : Task Finished.")
-            print("[SubtitleGenerator] : Type Enter to Exit.")
-            input()
-        
+    if not status:
+        print("[SubtitleGenerator] : Task Finished.")
+        print("[SubtitleGenerator] : Type Enter to Exit.")
+        input()
+"""
     except Exception as e:
         print("[SubtitleGenerator] : Panic!")
         print("[SubtitleGenerator] : Serious Error Occurred.")
@@ -268,7 +343,9 @@ if __name__ == "__main__":
         print("[SubtitleGenerator] : Do You Want to Remove All Memory Files?")
         uin = input("[SubtitleGenerator] : [Y/N] >>")
         if uin == "Y" or uin == "y":
-            print("[SubtitleGenerator] : WARNING! : This operation will remove all config files and memory files.")
+            print(
+                "[SubtitleGenerator] : WARNING! : This operation will remove all config files and memory files."
+            )
             uin = input("[SubtitleGenerator] : Are You Sure? [Y/N] >>")
             if uin == "Y" or uin == "y":
                 memo.clean()
@@ -279,3 +356,5 @@ if __name__ == "__main__":
                 print("[SubtitleGenerator] : Operation Canceled.")
         print("[SubtitleGenerator] : Type Enter to Exit.")
         input()
+
+"""
