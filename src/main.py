@@ -218,17 +218,34 @@ Enjoy creating subtitles with ease!
                 "[SubtitleGenerator] : please choose the language you want to translate."
             )
             language = None
+
             language_map = [
-                "English",
-                "Chinese",
-                "Japanese",
-                "Korean",
-                "French",
-                "German",
-                "Spanish",
-                "Italian",
-                "Portuguese",
-                "Russian",
+                "English",  # 英语
+                "Chinese",  # 中文
+                "Spanish",  # 西班牙语
+                "French",  # 法语
+                "German",  # 德语
+                "Russian",  # 俄语
+                "Japanese",  # 日语
+                "Portuguese",  # 葡萄牙语
+                "Italian",  # 意大利语
+                "Korean",  # 韩语
+                "Dutch",  # 荷兰语
+                "Arabic",  # 阿拉伯语
+                "Turkish",  # 土耳其语
+                "Swedish",  # 瑞典语
+                "Norwegian",  # 挪威语
+                "Danish",  # 丹麦语
+                "Polish",  # 波兰语
+                "Finnish",  # 芬兰语
+                "Czech",  # 捷克语
+                "Hungarian",  # 匈牙利语
+                "Greek",  # 希腊语
+                "Hebrew",  # 希伯来语
+                "Thai",  # 泰语
+                "Indonesian",  # 印尼语
+                "Vietnamese",  # 越南语
+                "Hindi",  # 印地语
             ]
 
             while True:
