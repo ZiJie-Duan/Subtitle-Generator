@@ -2,7 +2,7 @@
 # Subtitle Generator
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/versions-v1.3.0-alpha-orange)
+![Version](https://img.shields.io/badge/versions-1.3.0--aplha-orange)
 ![Windows](https://img.shields.io/badge/-Windows-blue?logo=windows)
 ![MacOS](https://img.shields.io/badge/-MacOS-black?logo=apple)
 ![Linux](https://img.shields.io/badge/-Linux-333?logo=ubuntu)
