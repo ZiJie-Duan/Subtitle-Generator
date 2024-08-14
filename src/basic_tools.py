@@ -51,8 +51,8 @@ class FilePath:
                 self.file_path = file_path
                 tmp = file_path.split("\\")
                 self.file_name = tmp[-1]
-                self.file_name_no_ext = self.file_name.split(".")[0]
-                self.file_ext = self.file_name.split(".")[1]
+                self.file_name_no_ext = "".join(self.file_name.split(".")[:-1])
+                self.file_ext = self.file_name.split(".")[-1]
                 tmp = tmp[:-1]
                 self.file_working_path = "\\".join(tmp)
                 return True
@@ -64,8 +64,8 @@ class FilePath:
                 self.file_path = file_path
                 tmp = file_path.split("/")
                 self.file_name = tmp[-1]
-                self.file_name_no_ext = self.file_name.split(".")[0]
-                self.file_ext = self.file_name.split(".")[1]
+                self.file_name_no_ext = "".join(self.file_name.split(".")[:-1])
+                self.file_ext = self.file_name.split(".")[-1]
                 tmp = tmp[:-1]
                 self.file_working_path = "/".join(tmp)
                 return True
@@ -140,9 +140,6 @@ class FilePath:
                             + "_new."
                             + self.file_ext
                         )
-        print("working path : ", self.file_working_path)
-        print("file : ", self.file_name)
-        print("[debug] create a new file obj: " + new_file_path)
         return FilePath(new_file_path)
 
     def exist(self):
