@@ -92,6 +92,14 @@ def subtitle_proportional_merge(sentences, time_map):
                 comb_time_map = []
                 is_comb = False
 
+    # make each timestamp shorter
+    # because float compare in Overlapping Check
+    for i in range(0, len(n_sentences)):
+        delta = 0.001
+        st = n_time_map[i][0] + delta
+        en = n_time_map[i][1] - delta
+        n_time_map[i] = (st, en)
+
     for i in range(1, len(n_sentences)):
         if n_time_map[i - 1][1] > n_time_map[i][0]:
             print("ERROR: Overlapping subtitles.")
@@ -626,13 +634,20 @@ Please do not provide any explanations and do not answer any questions.
 
 
 def sliding_matching(words_data, sentences):
-    # remove all spaces
+    """
+    sliding matching alg
+    match each sentence with words and timestamp
+    """
+    # remove all of the space in each sentences
+    # this for different language
     sentences = [x.replace(" ", "") for x in sentences]
     words = []
     words_map = []
     time_map = []
     location = 0
 
+    # timestamp is inside the words_data
+    # the words_map make us can easily find the word via index
     for i, word in enumerate(words_data):
         wordStr = word["word"]
         for char in wordStr:
@@ -643,6 +658,8 @@ def sliding_matching(words_data, sentences):
         min_distance = 999999999
         min_location = 0
 
+        # find the most accurate location in a longer sentence
+        # min_location is the head location of the sub_string
         for i in range(0, len(words) - len(sentence) + 1):
             be_matched = "".join(words[i : i + len(sentence)])
             distance = levenshtein_distance(be_matched, sentence)
@@ -653,17 +670,29 @@ def sliding_matching(words_data, sentences):
                 min_distance = distance
                 min_location = i
 
+        # when len(words) - len(sentence) = 0
+        # it also means var "words" don't have too much words
+        # it means the paragraph not too long, only have one sentence
         if min_distance == 999999999:
-            print("\n[sliding_matching] : No Matched Sentence.")
+            print("\n[sliding_matching] : sliding_matching ALG not Active")
             print("[sliding_matching] : ERROR : words    : ", "".join(words))
             print("[sliding_matching] : ERROR : sentence : ", sentence)
-            print("")
-            try:
-                time_map.append(time_map[-1])
-                print("[sliding_matching] : ERROR SOlVED : Use Last Time Map.")
-            except:
-                print("[sliding_matching] : ERROR SOlVED : Skip Sentence.")
+            print("[sliding_matching] : ERROR SOlVED : Skip Sentence.")
+            return [], False
+
+        # when sentence == "  "
+        # I don't know why, maybe GPT's reply include some empty value ?
+        if len(sentence) == 0:
+            print("\n[sliding_matching] : ERROR : sentence empty")
+            if len(time_map) >= 1:
+                time_map.append((time_map[-1][1] + 0.0001, time_map[-1][1] + 0.0002))
+                print("[sliding_matching] : ERROR SOlVED : Delta Shift")
+                continue
+            else:
+                print("[sliding_matching] : ERROR SOlVED : Skip Sentence")
                 return [], False
+                # why we give up all the data (time_map)
+                # because if len(time_map) < 1 means there no data
 
         else:
             location += len(sentence)
