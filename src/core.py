@@ -101,14 +101,23 @@ def subtitle_proportional_merge(sentences, time_map):
     # make each timestamp shorter
     # because float compare in Overlapping Check
     for i in range(1, len(n_sentences)):
-        if n_time_map[i - 1][1] > n_time_map[i][0]:
-            print("ERROR: Overlapping subtitles.")
-            print(
-                "time {}, Subtitle 1: {}".format(n_time_map[i - 1], n_sentences[i - 1])
-            )
-            print("time {}, Subtitle 2: {}".format(n_time_map[i], n_sentences[i]))
+        delta = 0.01
 
-    return n_sentences, n_time_map
+        if n_time_map[i - 1][1] >= n_time_map[i][0]:
+            if (n_time_map[i - 1][1] - n_time_map[i][0]) > delta:
+                print("ERROR: Overlapping subtitles.")
+                print(
+                    "time {}, Subtitle 1: {}".format(
+                        n_time_map[i - 1], n_sentences[i - 1]
+                    )
+                )
+                print("time {}, Subtitle 2: {}".format(n_time_map[i], n_sentences[i]))
+            else:
+                # if the differece not too big (normal in float calculation)
+                time_tup = (n_time_map[i - 1][1], n_time_map[i][1])
+                n_time_map[i] = time_tup
+
+        return n_sentences, n_time_map
 
 
 def levenshtein_distance(s1, s2):
