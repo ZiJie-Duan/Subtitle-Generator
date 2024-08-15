@@ -1,6 +1,7 @@
 import asyncio
 import json
 import math
+from os import walk
 import random
 import time
 
@@ -66,6 +67,11 @@ def subtitle_proportional_merge(sentences, time_map):
             or cben > time_map[i][0]
             or cben > time_map[i][1]
         ):
+            # i even don't belive that
+            # my program can leave this line to work
+            # -----------FUNNY BUG---------------------
+            combination.append(sentences[i - 1])
+            # -----------------------------------------
             comb_time_map.append(time_map[i - 1])
             cbst = min(cbst, time_map[i][0])
             cben = max(cben, time_map[i][1])
@@ -94,12 +100,6 @@ def subtitle_proportional_merge(sentences, time_map):
 
     # make each timestamp shorter
     # because float compare in Overlapping Check
-    for i in range(0, len(n_sentences)):
-        delta = 0.001
-        st = n_time_map[i][0] + delta
-        en = n_time_map[i][1] - delta
-        n_time_map[i] = (st, en)
-
     for i in range(1, len(n_sentences)):
         if n_time_map[i - 1][1] > n_time_map[i][0]:
             print("ERROR: Overlapping subtitles.")
@@ -859,7 +859,6 @@ class SubStampToSubtitleTranslation:
             match_anchor = self.memo("TaskData", "match_anchor")
 
             word_list = self.memo("TaskData", "word_timestamp")
-
             time_map, status = sliding_matching(word_list, match_anchor)
 
             if status:
